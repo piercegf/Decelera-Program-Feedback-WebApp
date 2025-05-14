@@ -38,7 +38,7 @@ st.set_page_config(
     page_icon=".streamlit/static/favicon.png",  # or "🚀", or "📊", or a path to a .png
     layout="wide"
 )
-logo = Image.open(".streamlit/static/decelera_old_logo.png")
+logo = Image.open("static/decelera_old_logo.png")
 st.image(logo, width=500)  # Adjust width if needed
 
 # === Airtable Config ===
