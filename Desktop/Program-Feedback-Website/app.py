@@ -38,7 +38,7 @@ st.set_page_config(
     page_icon=".streamlit/static/favicon.png",  # or "🚀", or "📊", or a path to a .png
     layout="wide"
 )
-st.image("decelera_old_logo.png", width=500)
+st.image("https://skipsolabs-innovation.s3.eu-west-1.amazonaws.com/frontend/section/partners/510/5951fa68d05d4caa02c8.png", width=500)
 
 # === Airtable Config ===
 AIRTABLE_PAT = st.secrets["airtable"]["api_key"]
