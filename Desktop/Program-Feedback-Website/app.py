@@ -373,12 +373,14 @@ olbi_disengage = raw_olbi_disengage[0] if isinstance(raw_olbi_disengage, list) a
 
 # Combine into a single block with icons
 def flag_color(text):
-    if "high" in text.lower():
-        return "🔴"
-    elif "moderate" in text.lower():
-        return "🟡"
-    elif "low" in text.lower():
-        return "🟢"
+    if isinstance(text, str):
+        text = text.lower()
+        if "high" in text:
+            return "🔴"
+        elif "moderate" in text:
+            return "🟡"
+        elif "low" in text:
+            return "🟢"
     return "⚪️"
 
 olbi_summary = f"""
