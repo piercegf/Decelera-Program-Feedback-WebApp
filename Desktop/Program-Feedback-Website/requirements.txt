@@ -1,0 +1,5 @@
+streamlit
+pandas
+pyairtable
+PIL
+plotly
