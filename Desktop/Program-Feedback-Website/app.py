@@ -538,3 +538,4 @@ if not chart_df.empty:
 else:
     st.info("No tag data available to chart.")
 
+
