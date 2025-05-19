@@ -455,7 +455,7 @@ olbi_summary = f"""
 st.success(olbi_summary)
 
 # === PROGRAM DUE DILIGENCE SECTION ===
-st.markdown("##Program Due Diligence")
+st.markdown("## Program Due Diligence")
 
 # --- Subsection: Unconventional Thinking
 st.markdown("### 💡 Unconventional Thinking")
