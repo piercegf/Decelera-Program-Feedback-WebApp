@@ -401,15 +401,21 @@ This section analyzes how founders are perceived by evaluators in terms of uncon
 It includes direct evaluator feedback and whether a startup received standout tags such as **Bonus Star** or **Red Flag**.
 """)
 
-# === Raw values
-ut_founders = row.get("Talks | Unconventional Thinking Founder", [])
-ut_evaluators = row.get("Talks | Unconventional Thinking Evaluator", [])
-ut_tags = row.get("Talks | Unconventional Thinking", [])
+# === Safe normalization helper ===
+def normalize_list(value):
+    if isinstance(value, list):
+        return value
+    elif isinstance(value, str):
+        return [value]
+    elif pd.isna(value) or value is None or (isinstance(value, float) and pd.isna(value)):
+        return []
+    else:
+        return [str(value)]
 
-# === Cleanup (if they're single strings, wrap as list)
-if isinstance(ut_founders, str): ut_founders = [ut_founders]
-if isinstance(ut_evaluators, str): ut_evaluators = [ut_evaluators]
-if isinstance(ut_tags, str): ut_tags = [ut_tags]
+# === Extract and normalize values
+ut_founders = normalize_list(row.get("Talks | Unconventional Thinking Founder"))
+ut_evaluators = normalize_list(row.get("Talks | Unconventional Thinking Evaluator"))
+ut_tags = normalize_list(row.get("Talks | Unconventional Thinking"))
 
 # === Show Founders
 st.markdown("**🧑‍🚀 Founders Evaluated for Unconventional Thinking:**")
@@ -429,11 +435,14 @@ else:
 st.markdown("**🏷️ Tags (Bonus Star / Red Flag):**")
 if ut_tags:
     for tag in ut_tags:
-        if "bonus" in tag.lower():
-            st.success(f"🌟 {tag}")
-        elif "red" in tag.lower():
-            st.error(f"🚩 {tag}")
+        if isinstance(tag, str):
+            if "bonus" in tag.lower():
+                st.success(f"🌟 {tag}")
+            elif "red" in tag.lower():
+                st.error(f"🚩 {tag}")
+            else:
+                st.warning(f"🔶 {tag}")
         else:
-            st.warning(f"🔶 {tag}")
+            st.warning(f"🔶 {str(tag)}")
 else:
     st.info("No tags submitted for this startup.")
