@@ -486,13 +486,21 @@ ut_evaluators = normalize_list(row.get("Talks | Unconventional Thinking Evaluato
 ut_tags = normalize_list(row.get("Talks | Unconventional Thinking", []))
 
 # === Show Founders with Name Mapping
+# === Show Founders with ID → Name Mapping
 st.markdown("**🧑‍🚀 Founders Evaluated for Unconventional Thinking:**")
+
+def get_founder_id(val):
+    # Airtable linked record objects might be {"id": "...", "name": "..."}
+    if isinstance(val, dict):
+        return val.get("id")
+    return val  # fallback if it’s already a string
+
 if ut_founders:
-    founder_names = [founder_id_to_name.get(f, f) for f in ut_founders]
+    founder_ids = [get_founder_id(f) for f in ut_founders]
+    founder_names = [founder_id_to_name.get(fid, fid) for fid in founder_ids]
     st.markdown("\n".join([f"- {name}" for name in founder_names]))
 else:
     st.info("No founder evaluation data available.")
-
 
 # === Show Evaluators
 st.markdown("**🧑‍⚖️ Evaluators Who Submitted Feedback:**")
