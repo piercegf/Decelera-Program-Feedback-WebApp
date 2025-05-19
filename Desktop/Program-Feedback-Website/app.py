@@ -455,7 +455,7 @@ olbi_summary = f"""
 st.success(olbi_summary)
 
 # === PROGRAM DUE DILIGENCE SECTION ===
-st.markdown("## 🧠 Program Due Diligence")
+st.markdown("##Program Due Diligence")
 
 # --- Subsection: Unconventional Thinking
 st.markdown("### 💡 Unconventional Thinking")
@@ -506,7 +506,7 @@ for i in range(max(len(founder_names), len(ut_evaluators), len(ut_tags))):
 df_ut = pd.DataFrame(rows)
 
 # === Display Table
-st.markdown("**🧑‍🔬 Detailed Feedback Summary**")
+st.markdown("**Detailed Feedback Summary**")
 st.dataframe(df_ut)
 
 # === Visual Summary: Tags per Founder
@@ -530,7 +530,7 @@ if not chart_df.empty:
         x="Founder",
         y=["Bonus Star", "Red Flag"],
         barmode="group",
-        title="🏅 Unconventional Thinking Tags by Founder",
+        title="Unconventional Thinking Tags by Founder",
         color_discrete_map={"Bonus Star": "green", "Red Flag": "red"}
     )
     fig_tags.update_layout(height=400)
