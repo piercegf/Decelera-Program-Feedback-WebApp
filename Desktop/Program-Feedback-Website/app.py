@@ -285,12 +285,24 @@ st.markdown("### 🚦 Flagged Dimensions")
 
 def render_flag_section(title, field, color):
     values = row.get(field)
+
+    # Normalize to a list if not already
+    if isinstance(values, float) and pd.isna(values):
+        values = []
+    elif isinstance(values, str):
+        values = [values]
+    elif values is None:
+        values = []
+    elif not isinstance(values, list):
+        values = [str(values)]
+
     if values:
         st.markdown(f"**<span style='color:{color}; font-weight:600'>{title}</span>**", unsafe_allow_html=True)
         for v in values:
             st.markdown(f"- {v}")
     else:
         st.markdown(f"**<span style='color:{color}; font-weight:600'>{title}</span>**: _None_", unsafe_allow_html=True)
+
 
 # === Risk Flags
 st.markdown("#### ⚠️ Risk Flags")
