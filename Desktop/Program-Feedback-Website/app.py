@@ -465,9 +465,9 @@ This section analyzes how founders are perceived by evaluators in terms of uncon
 It includes direct evaluator feedback and whether a startup received standout tags such as **Bonus Star** or **Red Flag**.
 """)
 
-# === Safe normalization helper
-import numpy as np  # Make sure this is at the top of your file too
+import numpy as np  # Make sure this is already imported at the top
 
+# === Safe normalization helper
 def normalize_list(value):
     if isinstance(value, list):
         return value
@@ -480,48 +480,61 @@ def normalize_list(value):
     else:
         return [str(value)]
 
-# === Extract and normalize values
+# === Get raw data
 ut_founders = normalize_list(row.get("Talks | Unconventional Thinking Founder", []))
 ut_evaluators = normalize_list(row.get("Talks | Unconventional Thinking Evaluator", []))
 ut_tags = normalize_list(row.get("Talks | Unconventional Thinking", []))
 
-# === Show Founders with Name Mapping
-# === Show Founders with ID → Name Mapping
-st.markdown("**🧑‍🚀 Founders Evaluated for Unconventional Thinking:**")
-
+# === ID → Name mapping helper
 def get_founder_id(val):
-    # Airtable linked record objects might be {"id": "...", "name": "..."}
     if isinstance(val, dict):
         return val.get("id")
-    return val  # fallback if it’s already a string
+    return val
 
-if ut_founders:
-    founder_ids = [get_founder_id(f) for f in ut_founders]
-    founder_names = [founder_id_to_name.get(fid, fid) for fid in founder_ids]
-    st.markdown("\n".join([f"- {name}" for name in founder_names]))
-else:
-    st.info("No founder evaluation data available.")
+# === Map and align entries
+founder_ids = [get_founder_id(f) for f in ut_founders]
+founder_names = [founder_id_to_name.get(fid, fid) for fid in founder_ids]
 
-# === Show Evaluators
-st.markdown("**🧑‍⚖️ Evaluators Who Submitted Feedback:**")
-if ut_evaluators:
-    st.markdown("\n".join([f"- {e}" for e in ut_evaluators]))
-else:
-    st.info("No evaluator data available.")
+# Combine aligned data into rows
+rows = []
+for i in range(max(len(founder_names), len(ut_evaluators), len(ut_tags))):
+    founder = founder_names[i] if i < len(founder_names) else "—"
+    evaluator = ut_evaluators[i] if i < len(ut_evaluators) else "—"
+    tag = ut_tags[i] if i < len(ut_tags) else "—"
+    rows.append({"Founder": founder, "Evaluator": evaluator, "Tag": tag})
 
-# === Show Tags (Bonus Star / Red Flag)
-st.markdown("**🏷️ Tags (Bonus Star / Red Flag):**")
-if ut_tags:
-    for tag in ut_tags:
-        if isinstance(tag, str):
-            if "bonus" in tag.lower():
-                st.success(f"🌟 {tag}")
-            elif "red" in tag.lower():
-                st.error(f"🚩 {tag}")
-            else:
-                st.warning(f"🔶 {tag}")
-        else:
-            st.warning(f"🔶 {str(tag)}")
+df_ut = pd.DataFrame(rows)
+
+# === Display Table
+st.markdown("**🧑‍🔬 Detailed Feedback Summary**")
+st.dataframe(df_ut)
+
+# === Visual Summary: Tags per Founder
+tag_summary = {}
+for row in rows:
+    founder = row["Founder"]
+    tag = row["Tag"].lower()
+    if founder not in tag_summary:
+        tag_summary[founder] = {"Bonus Star": 0, "Red Flag": 0}
+    if "bonus" in tag:
+        tag_summary[founder]["Bonus Star"] += 1
+    elif "red" in tag:
+        tag_summary[founder]["Red Flag"] += 1
+
+chart_df = pd.DataFrame(tag_summary).T.reset_index().rename(columns={"index": "Founder"})
+
+if not chart_df.empty:
+    import plotly.express as px
+    fig_tags = px.bar(
+        chart_df,
+        x="Founder",
+        y=["Bonus Star", "Red Flag"],
+        barmode="group",
+        title="🏅 Unconventional Thinking Tags by Founder",
+        color_discrete_map={"Bonus Star": "green", "Red Flag": "red"}
+    )
+    fig_tags.update_layout(height=400)
+    st.plotly_chart(fig_tags, use_container_width=True)
 else:
-    st.info("No tags submitted for this startup.")
+    st.info("No tag data available to chart.")
 
