@@ -33,6 +33,57 @@ id_to_name = {
     "27": "Sheldonn",
     "28": "Vixiees"
 }
+
+# === Manual mapping of Airtable record ID to founder names ===
+founder_id_to_name = {
+    "reckEp7yXcc5kUzw4": "Joan Jover",
+    "recc1YJvKk9y9sNre": "Lluis Jover Vilafranca",
+    "recjj5TVqlQ73gIml": "Artem Loginov",
+    "recSj5tMjcNT787Gp": "Dmitry Zaets",
+    "rec9qQtBw86jdfo0x": "Paula Camps",
+    "recOv4tuPs1ZJQeLB": "Nil Rodas",
+    "recmdeZCzXI2DyfDk": "Juan Alberto España Garcia",
+    "recJs9xDdf3GHhhbJ": "Alejandro Fernández Rodríguez",
+    "recq1vn95maYO1AFF": "Diego Pérez Sastre",
+    "recAwUcK4UwYCQ8Nb": "Juan Huguet",
+    "recogcsAZibIk4OPH": "Joaquin Diez",
+    "rec60NVqarI2s48u3": "Rafael Casuso",
+    "recsOZlQNZsFDSqtw": "Henrik Stamm Kristensen",
+    "recAjgqqnSqgN6v8r": "Jacob Kristensen Illán",
+    "recChH7IwT6LQOyv7": "Alejandro Paloma",
+    "recLQijSLzobSCODd": "Víctor Vicente Sánchez",
+    "recmhid6dQCAYG88A": "Antxon Caballero",
+    "recUAQITJFLdtUYIz": "Thomas Carson",
+    "recSrfVzDvKFjILAx": "Patricia Puiggros",
+    "rec9Jv3VH5N3S2H7c": "Silvia Fernandez Mulero",
+    "recD4WlvpZsevcIHT": "Lucy Lyons",
+    "recTqg6QXDwmjKLmg": "Gorka Muñecas",
+    "recW3rDeBmB5tq2Kz": "Anna Torrents",
+    "recvQEIoPUFehzmeJ": "Graeme Harris",
+    "recYcgQh2VU8KcrgU": "Lydia Taranilla",
+    "recb5zUyj1wWDjkgT": "Ana Lozano Portillo",
+    "reclX7It1sxtNFHOW": "Ignacio Barrea",
+    "recqudxt04FlAgcKy": "Santiago Gomez",
+    "recYjsxu2q09VddMK": "Dionís Guzmán",
+    "recR7t8yYqGhlIc3C": "Iván Martínez",
+    "rec7zMyfjA5RSDGmm": "Marc Serra",
+    "rec26pQKXNolvda2P": "Miguel Alves Ribeiro",
+    "recTf976Q3xY0zWnH": "Shakil Satar",
+    "recoyqN8ST1jUO58Y": "Francisco Alejandro Jurado Pérez",
+    "recDBB7bHPU1q397X": "Giorgio Fidei",
+    "recKFc88VGjI7xpJn": "Aditya  Malhotra",
+    "reccZ0ZCEPj48DZ1h": "Carlos Moreno Martín",
+    "recpb9EYIYYU8jrpq": "Abel Navajas",
+    "recxzCofGUvIuTJaM": "Javier Castrillo",
+    "recr0MHr9fQReJy2m": "Eduard  Aran Calonja",
+    "recy3oVDwgLtha2MV": "Carlos  Arboleya",
+    "recWPSZTxNWOvbL4d": "Carlos Saro",
+    "recjVjpczDp5CbYsU": "Alex Sanchez",
+    "rec842iG1sXEsgmf1": "Pablo Pascual",
+    "recGik3FBuGqYbZN5": "Alberto Garagnani",
+    "recuT12JFw2AZIEGX": "Moritz Beck"
+}
+
 # === Streamlit page config ===
 st.set_page_config(
     page_title="Startup Program Feedback Dashboard",
@@ -434,12 +485,14 @@ ut_founders = normalize_list(row.get("Talks | Unconventional Thinking Founder", 
 ut_evaluators = normalize_list(row.get("Talks | Unconventional Thinking Evaluator", []))
 ut_tags = normalize_list(row.get("Talks | Unconventional Thinking", []))
 
-# === Show Founders
+# === Show Founders with Name Mapping
 st.markdown("**🧑‍🚀 Founders Evaluated for Unconventional Thinking:**")
 if ut_founders:
-    st.markdown("\n".join([f"- {f}" for f in ut_founders]))
+    founder_names = [founder_id_to_name.get(f, f) for f in ut_founders]
+    st.markdown("\n".join([f"- {name}" for name in founder_names]))
 else:
     st.info("No founder evaluation data available.")
+
 
 # === Show Evaluators
 st.markdown("**🧑‍⚖️ Evaluators Who Submitted Feedback:**")
