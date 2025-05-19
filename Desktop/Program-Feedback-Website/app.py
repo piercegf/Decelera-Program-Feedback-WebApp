@@ -390,8 +390,50 @@ olbi_summary = f"""
 
 st.success(olbi_summary)
 
+# === PROGRAM DUE DILIGENCE SECTION ===
+st.markdown("## 🧠 Program Due Diligence")
 
+# --- Subsection: Unconventional Thinking
+st.markdown("### 💡 Unconventional Thinking")
 
+st.markdown("""
+This section analyzes how founders are perceived by evaluators in terms of unconventional thinking.  
+It includes direct evaluator feedback and whether a startup received standout tags such as **Bonus Star** or **Red Flag**.
+""")
 
+# === Raw values
+ut_founders = row.get("Talks | Unconventional Thinking Founder", [])
+ut_evaluators = row.get("Talks | Unconventional Thinking Evaluator", [])
+ut_tags = row.get("Talks | Unconventional Thinking", [])
 
+# === Cleanup (if they're single strings, wrap as list)
+if isinstance(ut_founders, str): ut_founders = [ut_founders]
+if isinstance(ut_evaluators, str): ut_evaluators = [ut_evaluators]
+if isinstance(ut_tags, str): ut_tags = [ut_tags]
 
+# === Show Founders
+st.markdown("**🧑‍🚀 Founders Evaluated for Unconventional Thinking:**")
+if ut_founders:
+    st.markdown("\n".join([f"- {f}" for f in ut_founders]))
+else:
+    st.info("No founder evaluation data available.")
+
+# === Show Evaluators
+st.markdown("**🧑‍⚖️ Evaluators Who Submitted Feedback:**")
+if ut_evaluators:
+    st.markdown("\n".join([f"- {e}" for e in ut_evaluators]))
+else:
+    st.info("No evaluator data available.")
+
+# === Show Tags (Bonus Star / Red Flag)
+st.markdown("**🏷️ Tags (Bonus Star / Red Flag):**")
+if ut_tags:
+    for tag in ut_tags:
+        if "bonus" in tag.lower():
+            st.success(f"🌟 {tag}")
+        elif "red" in tag.lower():
+            st.error(f"🚩 {tag}")
+        else:
+            st.warning(f"🔶 {tag}")
+else:
+    st.info("No tags submitted for this startup.")
