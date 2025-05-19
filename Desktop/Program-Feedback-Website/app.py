@@ -25,13 +25,14 @@ id_to_name = {
     "17": "SheerMe",
     "18": "Zell",
     "19": "Anyformat",
-    "20": "Silt",
     "21": "Valerdat",
-    "22": "KesTrix Ltd.",
+    "22": "Kestrix Ltd.",
     "23": "LingLoop (Menorca)",
-    "24": "Stand Up (Menorca)"
+    "24": "Stand Up (Menorca)",
+    "26": "Gaddex",
+    "27": "Sheldonn",
+    "28": "Vixiees"
 }
-
 # === Streamlit page config ===
 st.set_page_config(
     page_title="Startup Program Feedback Dashboard",
