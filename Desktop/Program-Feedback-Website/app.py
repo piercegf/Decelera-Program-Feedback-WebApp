@@ -401,21 +401,25 @@ This section analyzes how founders are perceived by evaluators in terms of uncon
 It includes direct evaluator feedback and whether a startup received standout tags such as **Bonus Star** or **Red Flag**.
 """)
 
-# === Safe normalization helper ===
+# === Safe normalization helper
+import numpy as np  # Make sure this is at the top of your file too
+
 def normalize_list(value):
     if isinstance(value, list):
         return value
     elif isinstance(value, str):
         return [value]
-    elif pd.isna(value) or value is None or (isinstance(value, float) and pd.isna(value)):
+    elif isinstance(value, float) and np.isnan(value):
+        return []
+    elif value is None:
         return []
     else:
         return [str(value)]
 
 # === Extract and normalize values
-ut_founders = normalize_list(row.get("Talks | Unconventional Thinking Founder"))
-ut_evaluators = normalize_list(row.get("Talks | Unconventional Thinking Evaluator"))
-ut_tags = normalize_list(row.get("Talks | Unconventional Thinking"))
+ut_founders = normalize_list(row.get("Talks | Unconventional Thinking Founder", []))
+ut_evaluators = normalize_list(row.get("Talks | Unconventional Thinking Evaluator", []))
+ut_tags = normalize_list(row.get("Talks | Unconventional Thinking", []))
 
 # === Show Founders
 st.markdown("**🧑‍🚀 Founders Evaluated for Unconventional Thinking:**")
@@ -446,3 +450,4 @@ if ut_tags:
             st.warning(f"🔶 {str(tag)}")
 else:
     st.info("No tags submitted for this startup.")
+
