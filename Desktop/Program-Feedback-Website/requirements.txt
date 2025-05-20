@@ -3,5 +3,4 @@ pandas
 pyairtable
 Pillow
 plotly
-defaultdict
 numpy
