@@ -318,7 +318,7 @@ ft_df = (pd.DataFrame.from_dict(founder_counts, orient="index")
          .rename(columns={"index": "Founder"}))
 
 if not ft_df.empty:
-    st.markdown("#### Founder-level Unconventional Thinking")
+    #st.markdown("#### Founder-level Unconventional Thinking")
    #st.dataframe(ft_df, use_container_width=True)
 
     fig_ft = px.bar(
