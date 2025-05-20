@@ -319,7 +319,7 @@ ft_df = (pd.DataFrame.from_dict(founder_counts, orient="index")
 
 if not ft_df.empty:
     st.markdown("#### Founder-level Unconventional Thinking")
-    st.dataframe(ft_df, use_container_width=True)
+   #st.dataframe(ft_df, use_container_width=True)
 
     fig_ft = px.bar(
         ft_df,
