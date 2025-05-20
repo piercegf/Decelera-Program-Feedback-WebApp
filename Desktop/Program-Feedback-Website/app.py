@@ -33,7 +33,8 @@ id_to_name = {
     "24": "Stand Up (Menorca)",
     "26": "Gaddex",
     "27": "Sheldonn",
-    "28": "Vixiees"
+    "28": "Vixiees",
+    "29": "IKI Health Group sL"
 }
 
 # === Manual mapping of Airtable record ID to founder names ===
