@@ -338,7 +338,6 @@ else:
 # === Team Human Metrics =====================================================
 st.markdown("## 👥 Team Human Metrics")
 
-# --- Columns we're evaluating ---
 team_columns = [
     "Conflict resolution | Average",
     "Clear vision alignment | Average",
@@ -350,35 +349,32 @@ team_columns = [
     "Product and Customer Focus | Average",
 ]
 
-# --- Individual startup scores ---
-startup_scores = {col.split(" |")[0]: row.get(col, 0) for col in team_columns}
+# --- Scores for the chosen startup ------------------------------------------
+startup_scores = {c.split(" |")[0]: row.get(c, 0) for c in team_columns}
 
-# --- Cohort (all-startup) averages ---
+# --- Cohort-wide averages ----------------------------------------------------
 cohort_means = df[team_columns].mean()
-cohort_scores = {col.split(" |")[0]: cohort_means[col] for col in team_columns}
 
-# --- Build comparison dataframe ---
-comparison_df = (
+# ── Show cohort averages as headline metrics ────────────────────────────────
+avg_cols = st.columns(len(team_columns))
+for i, col in enumerate(team_columns):
+    pillar = col.split(" |")[0]
+    avg_cols[i].metric(pillar, f"{cohort_means[col]:.2f}")
+
+# ── Bar chart of the startup’s own scores ───────────────────────────────────
+team_df = (
     pd.DataFrame({
         "Metric": list(startup_scores.keys()),
-        "Startup Score": list(startup_scores.values()),
-        "Cohort Average": list(cohort_scores.values()),
+        "Score":  list(startup_scores.values()),
     })
-    .melt(id_vars="Metric", var_name="Series", value_name="Score")
 )
 
-# --- Plot ---
 fig_team = px.bar(
-    comparison_df,
+    team_df,
     x="Metric",
     y="Score",
-    color="Series",
-    barmode="group",
     text="Score",
-    color_discrete_map={
-        "Startup Score": "rgb(52, 199, 89)",   # green
-        "Cohort Average": "rgb(0, 122, 255)",  # blue
-    },
+    color_discrete_sequence=["rgb(52, 199, 89)"],
 )
 fig_team.update_traces(texttemplate='%{text:.2f}', textposition='outside')
 fig_team.update_layout(
@@ -389,6 +385,7 @@ fig_team.update_layout(
 )
 
 st.plotly_chart(fig_team, use_container_width=True)
+
 
 # === Average Risk (Row 1)
 risk_col = st.columns([1])[0]
