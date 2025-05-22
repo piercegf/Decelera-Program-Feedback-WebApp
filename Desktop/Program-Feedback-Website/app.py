@@ -339,12 +339,14 @@ else:
 st.markdown("## 👥 Team Human Metrics")
 
 team_metrics = {
-    "Conflict resolution":            row.get("Conflict resolution | Average", 0),
-    "Clear vision alignment":         row.get("Clear vision alignment | Average", 0),
-    "Clear roles":                    row.get("Clear roles | Average", 0),
-    "Complementary hard skills":      row.get("Complementary hard skills | Average", 0),
-    "Execution and speed":            row.get("Execution and speed | Average", 0),
-    "Team ambition":                  row.get("Team ambition | Average", 0),
+    "Conflict resolution":                 row.get("Conflict resolution | Average", 0),
+    "Clear vision alignment":              row.get("Clear vision alignment | Average", 0),
+    "Clear roles":                         row.get("Clear roles | Average", 0),
+    "Complementary hard skills":           row.get("Complementary hard skills | Average", 0),
+    "Execution and speed":                 row.get("Execution and speed | Average", 0),
+    "Team ambition":                       row.get("Team ambition | Average", 0),
+    "Confidence and mutual respect":       row.get("Confidence and mutual respect | Average", 0),   # NEW
+    "Product and Customer Focus":          row.get("Product and Customer Focus | Average", 0),      # NEW
 }
 
 team_df = (pd.DataFrame.from_dict(team_metrics, orient="index", columns=["Score"])
@@ -356,7 +358,7 @@ fig_team = px.bar(
     x="Metric",
     y="Score",
     text="Score",
-    color_discrete_sequence=["rgb(52, 199, 89)"],  # greenish palette
+    color_discrete_sequence=["rgb(52, 199, 89)"],
 )
 fig_team.update_traces(texttemplate='%{text:.2f}', textposition='outside')
 fig_team.update_layout(
