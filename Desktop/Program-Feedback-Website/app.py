@@ -338,34 +338,54 @@ else:
 # === Team Human Metrics =====================================================
 st.markdown("## 👥 Team Human Metrics")
 
-team_metrics = {
-    "Conflict resolution":                 row.get("Conflict resolution | Average", 0),
-    "Clear vision alignment":              row.get("Clear vision alignment | Average", 0),
-    "Clear roles":                         row.get("Clear roles | Average", 0),
-    "Complementary hard skills":           row.get("Complementary hard skills | Average", 0),
-    "Execution and speed":                 row.get("Execution and speed | Average", 0),
-    "Team ambition":                       row.get("Team ambition | Average", 0),
-    "Confidence and mutual respect":       row.get("Confidence and mutual respect | Average", 0),   # NEW
-    "Product and Customer Focus":          row.get("Product and Customer Focus | Average", 0),      # NEW
-}
+# --- Columns we're evaluating ---
+team_columns = [
+    "Conflict resolution | Average",
+    "Clear vision alignment | Average",
+    "Clear roles | Average",
+    "Complementary hard skills | Average",
+    "Execution and speed | Average",
+    "Team ambition | Average",
+    "Confidence and mutual respect | Average",
+    "Product and Customer Focus | Average",
+]
 
-team_df = (pd.DataFrame.from_dict(team_metrics, orient="index", columns=["Score"])
-           .reset_index()
-           .rename(columns={"index": "Metric"}))
+# --- Individual startup scores ---
+startup_scores = {col.split(" |")[0]: row.get(col, 0) for col in team_columns}
 
+# --- Cohort (all-startup) averages ---
+cohort_means = df[team_columns].mean()
+cohort_scores = {col.split(" |")[0]: cohort_means[col] for col in team_columns}
+
+# --- Build comparison dataframe ---
+comparison_df = (
+    pd.DataFrame({
+        "Metric": list(startup_scores.keys()),
+        "Startup Score": list(startup_scores.values()),
+        "Cohort Average": list(cohort_scores.values()),
+    })
+    .melt(id_vars="Metric", var_name="Series", value_name="Score")
+)
+
+# --- Plot ---
 fig_team = px.bar(
-    team_df,
+    comparison_df,
     x="Metric",
     y="Score",
+    color="Series",
+    barmode="group",
     text="Score",
-    color_discrete_sequence=["rgb(52, 199, 89)"],
+    color_discrete_map={
+        "Startup Score": "rgb(52, 199, 89)",   # green
+        "Cohort Average": "rgb(0, 122, 255)",  # blue
+    },
 )
 fig_team.update_traces(texttemplate='%{text:.2f}', textposition='outside')
 fig_team.update_layout(
     yaxis_range=[0, 4],
-    height=400,
+    height=450,
     xaxis_tickangle=-45,
-    margin=dict(t=50, b=0)
+    margin=dict(t=50, b=0),
 )
 
 st.plotly_chart(fig_team, use_container_width=True)
