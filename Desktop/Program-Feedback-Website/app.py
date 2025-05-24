@@ -368,7 +368,6 @@ founder_ut_tags    = normalize_list(row.get("Talks | Unconventional Thinking", [
 founder_ids        = [get_founder_id(f) for f in founder_links]
 founder_names      = [founder_id_to_name.get(fid, fid) for fid in founder_ids]
 
-from collections import defaultdict
 founder_counts     = defaultdict(lambda: {"Bonus Star": 0, "Red Flag": 0})
 
 for idx, fname in enumerate(founder_names):
