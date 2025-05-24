@@ -444,9 +444,7 @@ fig_reward.update_layout(yaxis_range=[0, 4], height=400)
 
 st.plotly_chart(fig_reward, use_container_width=True)
 
-import re
-import streamlit as st
-import pandas as pd     # already imported in your script
+st.markdown("### 🚦 Flagged Dimensions")
 
 def _split_name_and_feedback(chunk: str) -> tuple[str, str]:
     """
@@ -491,6 +489,18 @@ def render_flag_section(title: str, field: str, color: str):
                 continue
             # “nice green result field”
             st.success(f"**{name}**\n\n{feedback}")
+
+# === Risk Flags
+st.markdown("#### ⚠️ Risk Flags")
+render_flag_section("Green", "RISK | Green_exp", "green")
+render_flag_section("Yellow", "RISK | Yellow_exp", "orange")
+render_flag_section("Red", "RISK | Red_exp", "red")
+
+# === Reward Flags
+st.markdown("#### 🎯 Reward Flags")
+render_flag_section("Green", "Reward | Green_exp", "green")
+render_flag_section("Yellow", "Reward | Yellow_exp", "orange")
+render_flag_section("Red", "Reward | Red_exp", "red")
 
 st.markdown("### 👥 Team Human Due Diligence")
 
