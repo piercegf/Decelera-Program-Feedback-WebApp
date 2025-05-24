@@ -6,7 +6,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from collections import defaultdict
 import numpy as np
-
+import re
 
 # === Manual ID → Startup Name mapping ===
 id_to_name = {
@@ -444,39 +444,53 @@ fig_reward.update_layout(yaxis_range=[0, 4], height=400)
 
 st.plotly_chart(fig_reward, use_container_width=True)
 
-st.markdown("### 🚦 Flagged Dimensions")
+import re
+import streamlit as st
+import pandas as pd     # already imported in your script
 
-def render_flag_section(title, field, color):
+def _split_name_and_feedback(chunk: str) -> tuple[str, str]:
+    """
+    From a chunk of text that was separated by <br>, return (name, feedback).
+    If the first line contains a colon we treat it as anonymous feedback.
+    """
+    parts = [p.strip() for p in chunk.split("<br>") if p.strip()]
+    if not parts:
+        return "", ""
+    if ":" not in parts[0]:               # looks like “David Baratech”
+        return parts[0], "\n".join(parts[1:])
+    return "Anonymous", "\n".join(parts)
+
+def render_flag_section(title: str, field: str, color: str):
+    # --- fetch & normalise the “values” column ----------
     values = row.get(field)
-
-    # Normalize to a list if not already
     if isinstance(values, float) and pd.isna(values):
+        values = []
+    elif values is None:
         values = []
     elif isinstance(values, str):
         values = [values]
-    elif values is None:
-        values = []
     elif not isinstance(values, list):
         values = [str(values)]
 
-    if values:
-        st.markdown(f"**<span style='color:{color}; font-weight:600'>{title}</span>**", unsafe_allow_html=True)
-        for v in values:
-            st.markdown(f"{v}")
-    else:
-        st.markdown(f"**<span style='color:{color}; font-weight:600'>{title}</span>**: _None_", unsafe_allow_html=True)
+    # --- section heading (Green / Yellow / Red) ---------
+    st.markdown(
+        f"**<span style='color:{color}; font-weight:600'>{title}</span>**",
+        unsafe_allow_html=True,
+    )
 
-# === Risk Flags
-st.markdown("#### ⚠️ Risk Flags")
-render_flag_section("Green", "RISK | Green_exp", "green")
-render_flag_section("Yellow", "RISK | Yellow_exp", "orange")
-render_flag_section("Red", "RISK | Red_exp", "red")
+    if not values:
+        st.markdown("_None_")
+        return
 
-# === Reward Flags
-st.markdown("#### 🎯 Reward Flags")
-render_flag_section("Green", "Reward | Green_exp", "green")
-render_flag_section("Yellow", "Reward | Yellow_exp", "orange")
-render_flag_section("Red", "Reward | Red_exp", "red")
+    # --- pretty print each mentor’s feedback ------------
+    for raw in values:
+        # split on double-breaks → each block tends to start with a name
+        for chunk in re.split(r"<br>\s*<br>", raw):
+            name, feedback = _split_name_and_feedback(chunk)
+            if not feedback:
+                continue
+            # “nice green result field”
+            st.success(f"**{name}**\n\n{feedback}")
 
 st.markdown("### 👥 Team Human Due Diligence")
 
