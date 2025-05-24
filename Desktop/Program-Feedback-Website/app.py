@@ -466,7 +466,6 @@ def render_flag_section(title, field, color):
     else:
         st.markdown(f"**<span style='color:{color}; font-weight:600'>{title}</span>**: _None_", unsafe_allow_html=True)
 
-
 # === Risk Flags
 st.markdown("#### ⚠️ Risk Flags")
 render_flag_section("Green", "RISK | Green_exp", "green")
