@@ -444,22 +444,37 @@ fig_reward.update_layout(yaxis_range=[0, 4], height=400)
 
 st.plotly_chart(fig_reward, use_container_width=True)
 
-st.markdown("### 🚦 Flagged Dimensions")
-
 def _split_name_and_feedback(chunk: str) -> tuple[str, str]:
     """
-    From a chunk of text that was separated by <br>, return (name, feedback).
-    If the first line contains a colon we treat it as anonymous feedback.
+    Returns (mentor_name, feedback).
+    Handles both “Name<br>Feedback …”  and  “Name: Feedback …” styles.
     """
-    parts = [p.strip() for p in chunk.split("<br>") if p.strip()]
-    if not parts:
-        return "", ""
-    if ":" not in parts[0]:               # looks like “David Baratech”
-        return parts[0], "\n".join(parts[1:])
-    return "Anonymous", "\n".join(parts)
+    # break the HTML block into logical lines
+    lines = [l.strip() for l in chunk.split("<br>") if l.strip()]
+    if not lines:
+        return "Anonymous", ""
+
+    first = lines[0]
+
+    # -- CASE 1: “Name: …” on the same line ------------------------------
+    if ":" in first:
+        name, first_fb = first.split(":", 1)
+        name = name.strip()
+        feedback_lines = [first_fb.strip()] + lines[1:]
+    # -- CASE 2: “Name” on its own line, feedback starts next line --------
+    else:
+        name = first
+        feedback_lines = lines[1:]
+
+    feedback = "\n".join(feedback_lines).strip()
+    return (name or "Anonymous"), feedback
+
 
 def render_flag_section(title: str, field: str, color: str):
-    # --- fetch & normalise the “values” column ----------
+    """
+    Pretty-prints a single flag section (Green / Yellow / Red).
+    Uses coloured Streamlit boxes (success / warning / error).
+    """
     values = row.get(field)
     if isinstance(values, float) and pd.isna(values):
         values = []
@@ -470,7 +485,7 @@ def render_flag_section(title: str, field: str, color: str):
     elif not isinstance(values, list):
         values = [str(values)]
 
-    # --- section heading (Green / Yellow / Red) ---------
+    # heading for the colour bucket
     st.markdown(
         f"**<span style='color:{color}; font-weight:600'>{title}</span>**",
         unsafe_allow_html=True,
@@ -480,15 +495,18 @@ def render_flag_section(title: str, field: str, color: str):
         st.markdown("_None_")
         return
 
-    # --- pretty print each mentor’s feedback ------------
+    # choose the right Streamlit ‘call-out’ box
+    box = {"green": st.success,
+           "orange": st.warning,
+           "red": st.error}.get(color, st.info)
+
+    # print each mentor + feedback nicely
     for raw in values:
-        # split on double-breaks → each block tends to start with a name
+        # double <br> separates different mentors’ comments
         for chunk in re.split(r"<br>\s*<br>", raw):
-            name, feedback = _split_name_and_feedback(chunk)
-            if not feedback:
-                continue
-            # “nice green result field”
-            st.success(f"**{name}**\n\n{feedback}")
+            name, fb = _split_name_and_feedback(chunk)
+            if fb:
+                box(f"**{name}**\n\n{fb}")
 
 # === Risk Flags
 st.markdown("#### ⚠️ Risk Flags")
