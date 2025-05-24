@@ -4,4 +4,3 @@ pyairtable
 Pillow
 plotly
 numpy
-re
