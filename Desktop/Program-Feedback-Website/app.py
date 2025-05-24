@@ -297,9 +297,6 @@ st.subheader("Risk/Reward")
 risk_col = st.columns([1])[0]
 risk_col.metric("Average Risk", round(row.get("Average RISK", 0), 2))
 
-# === Spacer
-st.markdown(" ")
-
 # === Average Reward (Row 3)
 reward_col = st.columns([1])[0]
 reward_col.metric("Average Reward", round(row.get("Average Reward", 0), 2))
