@@ -444,37 +444,34 @@ fig_reward.update_layout(yaxis_range=[0, 4], height=400)
 
 st.plotly_chart(fig_reward, use_container_width=True)
 
-def _split_name_and_feedback(chunk: str) -> tuple[str, str]:
+def _group_by_mentor(raw_html: str):
     """
-    Returns (mentor_name, feedback).
-    Handles both “Name<br>Feedback …”  and  “Name: Feedback …” styles.
+    Yields (mentor, feedback_text) for one big HTML string that may contain
+    several mentors, their comments, and many <br> tags.
+    A line that ends with ':' and has **at least one space** is treated
+    as a mentor header; everything else is feedback.
     """
-    # break the HTML block into logical lines
-    lines = [l.strip() for l in chunk.split("<br>") if l.strip()]
-    if not lines:
-        return "Anonymous", ""
+    # 1) explode into individual lines, ditch empties
+    lines = [l.strip() for l in raw_html.split("<br>") if l.strip()]
 
-    first = lines[0]
+    mentor, bucket = "Anonymous", []
+    for line in lines:
+        if line.endswith(":") and " " in line[:-1]:
+            # flush the current mentor before switching
+            if bucket:
+                yield mentor, "\n".join(bucket).strip()
+                bucket = []
+            mentor = line[:-1].strip()          # drop the trailing ':'
+        else:
+            bucket.append(line)
 
-    # -- CASE 1: “Name: …” on the same line ------------------------------
-    if ":" in first:
-        name, first_fb = first.split(":", 1)
-        name = name.strip()
-        feedback_lines = [first_fb.strip()] + lines[1:]
-    # -- CASE 2: “Name” on its own line, feedback starts next line --------
-    else:
-        name = first
-        feedback_lines = lines[1:]
-
-    feedback = "\n".join(feedback_lines).strip()
-    return (name or "Anonymous"), feedback
+    if bucket:                                   # flush last mentor
+        yield mentor, "\n".join(bucket).strip()
 
 
 def render_flag_section(title: str, field: str, color: str):
-    """
-    Pretty-prints a single flag section (Green / Yellow / Red).
-    Uses coloured Streamlit boxes (success / warning / error).
-    """
+    """Streamlit pretty-printer for one colour bucket (Green / Yellow / Red)."""
+    # normalise dataframe cell (same as before)
     values = row.get(field)
     if isinstance(values, float) and pd.isna(values):
         values = []
@@ -485,28 +482,24 @@ def render_flag_section(title: str, field: str, color: str):
     elif not isinstance(values, list):
         values = [str(values)]
 
-    # heading for the colour bucket
-    st.markdown(
-        f"**<span style='color:{color}; font-weight:600'>{title}</span>**",
-        unsafe_allow_html=True,
-    )
+    # section heading
+    st.markdown(f"**<span style='color:{color}; font-weight:600'>{title}</span>**",
+                unsafe_allow_html=True)
 
     if not values:
         st.markdown("_None_")
         return
 
-    # choose the right Streamlit ‘call-out’ box
+    # choose coloured call-out
     box = {"green": st.success,
            "orange": st.warning,
            "red": st.error}.get(color, st.info)
 
-    # print each mentor + feedback nicely
+    # pretty-print every mentor / feedback pair
     for raw in values:
-        # double <br> separates different mentors’ comments
-        for chunk in re.split(r"<br>\s*<br>", raw):
-            name, fb = _split_name_and_feedback(chunk)
+        for mentor, fb in _group_by_mentor(raw):
             if fb:
-                box(f"**{name}**\n\n{fb}")
+                box(f"**{mentor}**\n\n{fb}")
 
 # === Risk Flags
 st.markdown("#### ⚠️ Risk Flags")
