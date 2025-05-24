@@ -614,5 +614,4 @@ olbi_summary = f"""
 **Exhaustion:** {flag_color(olbi_exhaust)} {olbi_exhaust}  
 **Disengagement:** {flag_color(olbi_disengage)} {olbi_disengage}
 """
-
 st.success(olbi_summary)
