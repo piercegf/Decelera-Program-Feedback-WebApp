@@ -277,6 +277,11 @@ st.markdown(" ")
 # -------------------------------------------------------------------
 st.subheader("💸 Investability")
 
+yes_votes  = row.get("Investable_Yes_Count", 0) or 0
+no_votes   = row.get("Investable_No_Count", 0) or 0
+total_votes = yes_votes + no_votes
+yes_ratio   = (yes_votes / total_votes * 100) if total_votes else 0
+
 #–– yes / no / ratio  (3-column row)
 col_yes, col_no, col_ratio = st.columns(3)
 col_yes.metric("✅ Yes Votes",  int(yes_votes))
