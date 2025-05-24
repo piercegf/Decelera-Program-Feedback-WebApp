@@ -291,8 +291,6 @@ col_ratio.metric("🟢 Yes Ratio", f"{yes_ratio:.1f}%" if total_votes else "—"
 # horizontal rule between the two big blocks
 st.markdown("---")
 
-st.subheader("Risk/Reward")
-
 # === Average Risk (Row 1)
 risk_col = st.columns([1])[0]
 risk_col.metric("Average Risk", round(row.get("Average RISK", 0), 2))
