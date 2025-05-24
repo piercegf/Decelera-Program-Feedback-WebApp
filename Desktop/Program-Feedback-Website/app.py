@@ -450,43 +450,45 @@ fig_team.update_layout(
 
 st.plotly_chart(fig_team, use_container_width=True)
 
+_HDR_RE = re.compile(r"([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+:)")   # ≥2 words, then :
+
+def _split_lines(raw_html: str) -> list[str]:
+    """
+    Return a clean list of logical lines.
+    Adds a <br> *before* any 'Firstname Lastname:' header that wasn't already
+    at the start of a line.
+    """
+    # put a break in front of every header that is not *already* preceded by <br>
+    fixed = _HDR_RE.sub(r"<br>\1", raw_html)
+    # split on <br> and strip whitespace
+    return [l.strip() for l in fixed.split("<br>") if l.strip()]
+
+# ──────────────────────────────────────────────────────────────────────────
+# Group feedback chunks by mentor
+# ──────────────────────────────────────────────────────────────────────────
 def _group_by_mentor(raw_html: str):
-    """
-    Yields (mentor, feedback) pairs from one HTML blob.
-    Handles both 'Name:'  and  'Name<newline>' styles safely.
-    """
-    lines = [l.strip() for l in raw_html.split("<br>") if l.strip()]
+    lines = _split_lines(raw_html)
 
     mentor, bucket = "Anonymous", []
     for line in lines:
-        new_header = False
-
-        # Style A ─ 'Name: ....'
-        if line.endswith(":") and " " in line[:-1]:
-            mentor          = line[:-1].strip()
-            new_header      = True
-
-        # Style B ─ 'Name' (no colon) only if we haven't started writing yet
-        elif not bucket and mentor == "Anonymous" and " " in line:
-            mentor          = line
-            new_header      = True
-
-        if new_header:
-            if bucket:                          # flush previous
-                yield prev_mentor, "\n".join(bucket).strip()
+        # header?  (full line, ≥2‐word name, ends with :)
+        if _HDR_RE.fullmatch(line):
+            # flush the previous mentor
+            if bucket:
+                yield mentor, "\n".join(bucket).strip()
                 bucket = []
-            prev_mentor = mentor                # remember for flush later
+            mentor = line[:-1].strip()          # drop trailing ':'
             continue
 
         bucket.append(line)
 
-    # flush the final mentor
     if bucket:
         yield mentor, "\n".join(bucket).strip()
 
+# ──────────────────────────────────────────────────────────────────────────
+# Same render_flag_section as before
+# ──────────────────────────────────────────────────────────────────────────
 def render_flag_section(title: str, field: str, color: str):
-    """Streamlit pretty-printer for one colour bucket (Green / Yellow / Red)."""
-    # normalise dataframe cell (same as before)
     values = row.get(field)
     if isinstance(values, float) and pd.isna(values):
         values = []
@@ -497,7 +499,6 @@ def render_flag_section(title: str, field: str, color: str):
     elif not isinstance(values, list):
         values = [str(values)]
 
-    # section heading
     st.markdown(f"**<span style='color:{color}; font-weight:600'>{title}</span>**",
                 unsafe_allow_html=True)
 
@@ -505,12 +506,10 @@ def render_flag_section(title: str, field: str, color: str):
         st.markdown("_None_")
         return
 
-    # choose coloured call-out
     box = {"green": st.success,
            "orange": st.warning,
            "red": st.error}.get(color, st.info)
 
-    # pretty-print every mentor / feedback pair
     for raw in values:
         for mentor, fb in _group_by_mentor(raw):
             if fb:
