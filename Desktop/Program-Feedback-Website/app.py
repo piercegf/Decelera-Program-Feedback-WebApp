@@ -272,56 +272,32 @@ else:
 
 
 st.markdown(" ")
-# === Investability & Unconventional Thinking
-st.subheader("💸 Investability & Unconventional Thinking")
+# -------------------------------------------------------------------
+# 💸 1) INVESTABILITY  ───────────────────────────────────────────────
+# -------------------------------------------------------------------
+st.subheader("💸 Investability")
 
-# ── Investability counts ───────────────────────────────────────────────────────
-yes_votes  = row.get("Investable_Yes_Count", 0) or 0
-no_votes   = row.get("Investable_No_Count", 0) or 0
-total_votes = yes_votes + no_votes
-yes_ratio   = (yes_votes / total_votes * 100) if total_votes else 0
+#–– yes / no / ratio  (3-column row)
+col_yes, col_no, col_ratio = st.columns(3)
+col_yes.metric("✅ Yes Votes",  int(yes_votes))
+col_no.metric("❌ No Votes",    int(no_votes))
+col_ratio.metric("🟢 Yes Ratio", f"{yes_ratio:.1f}%" if total_votes else "—")
 
-# ── Startup-level unconventional-thinking counts ───────────────────────────────
-startup_ut_tags = normalize_list(row.get("Talks | Unconventional Thinking", []))
-bonus_total     = sum("bonus" in str(t).lower() for t in startup_ut_tags)
-red_flag_total  = sum("red"   in str(t).lower() for t in startup_ut_tags)
+# horizontal rule between the two big blocks
+st.markdown("---")
 
-# ── 5-column KPI row ───────────────────────────────────────────────────────────
-col1, col2, col3, col4, col5 = st.columns(5)
-col1.metric("✅ Yes Votes",  int(yes_votes))
-col2.metric("❌ No Votes",   int(no_votes))
-col3.metric("🟢 Yes Ratio",  f"{yes_ratio:.1f}%" if total_votes else "—")
-col4.metric("⭐ Bonus Star", int(bonus_total))
-col5.metric("🚩 Red Flag",   int(red_flag_total))
+# -------------------------------------------------------------------
+# 🧠 2) UNCONVENTIONAL THINKING  ─────────────────────────────────────
+# -------------------------------------------------------------------
+st.subheader("🧠 Unconventional Thinking")
 
-# ==============================================================================#
-#                Founder-level Bonus Star / Red Flag breakdown                  #
-# ==============================================================================#
-founder_links    = normalize_list(row.get("Talks | Unconventional Thinking Founder", []))
-founder_ut_tags  = normalize_list(row.get("Talks | Unconventional Thinking", []))
+#–– startup-level UT tallies  (2-column row)
+col_bonus, col_red = st.columns(2)
+col_bonus.metric("⭐ Bonus Star", int(bonus_total))
+col_red.metric("🚩 Red Flag",    int(red_flag_total))
 
-founder_ids   = [get_founder_id(f) for f in founder_links]
-founder_names = [founder_id_to_name.get(fid, fid) for fid in founder_ids]
-
-from collections import defaultdict
-founder_counts = defaultdict(lambda: {"Bonus Star": 0, "Red Flag": 0})
-
-for idx, fname in enumerate(founder_names):
-    tag = founder_ut_tags[idx] if idx < len(founder_ut_tags) else ""
-    tag_lc = str(tag).lower()
-    if "bonus" in tag_lc:
-        founder_counts[fname]["Bonus Star"] += 1
-    elif "red" in tag_lc:
-        founder_counts[fname]["Red Flag"] += 1
-
-ft_df = (pd.DataFrame.from_dict(founder_counts, orient="index")
-         .reset_index()
-         .rename(columns={"index": "Founder"}))
-
+#–– founder-level breakdown  (grouped bar chart)
 if not ft_df.empty:
-    #st.markdown("#### Founder-level Unconventional Thinking")
-   #st.dataframe(ft_df, use_container_width=True)
-
     fig_ft = px.bar(
         ft_df,
         x="Founder",
@@ -329,7 +305,7 @@ if not ft_df.empty:
         barmode="group",
         title="Unconventional-Thinking Tags per Founder",
         color_discrete_map={"Bonus Star": "green", "Red Flag": "red"},
-        height=350
+        height=350,
     )
     st.plotly_chart(fig_ft, use_container_width=True)
 else:
