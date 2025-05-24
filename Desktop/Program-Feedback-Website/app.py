@@ -446,28 +446,37 @@ st.plotly_chart(fig_reward, use_container_width=True)
 
 def _group_by_mentor(raw_html: str):
     """
-    Yields (mentor, feedback_text) for one big HTML string that may contain
-    several mentors, their comments, and many <br> tags.
-    A line that ends with ':' and has **at least one space** is treated
-    as a mentor header; everything else is feedback.
+    Yields (mentor, feedback) pairs from one HTML blob.
+    Handles both 'Name:'  and  'Name<newline>' styles safely.
     """
-    # 1) explode into individual lines, ditch empties
     lines = [l.strip() for l in raw_html.split("<br>") if l.strip()]
 
     mentor, bucket = "Anonymous", []
     for line in lines:
+        new_header = False
+
+        # Style A ─ 'Name: ....'
         if line.endswith(":") and " " in line[:-1]:
-            # flush the current mentor before switching
-            if bucket:
-                yield mentor, "\n".join(bucket).strip()
+            mentor          = line[:-1].strip()
+            new_header      = True
+
+        # Style B ─ 'Name' (no colon) only if we haven't started writing yet
+        elif not bucket and mentor == "Anonymous" and " " in line:
+            mentor          = line
+            new_header      = True
+
+        if new_header:
+            if bucket:                          # flush previous
+                yield prev_mentor, "\n".join(bucket).strip()
                 bucket = []
-            mentor = line[:-1].strip()          # drop the trailing ':'
-        else:
-            bucket.append(line)
+            prev_mentor = mentor                # remember for flush later
+            continue
 
-    if bucket:                                   # flush last mentor
+        bucket.append(line)
+
+    # flush the final mentor
+    if bucket:
         yield mentor, "\n".join(bucket).strip()
-
 
 def render_flag_section(title: str, field: str, color: str):
     """Streamlit pretty-printer for one colour bucket (Green / Yellow / Red)."""
