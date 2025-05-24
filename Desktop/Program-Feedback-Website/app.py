@@ -313,6 +313,9 @@ else:
 
 # === Team Human Metrics =====================================================
 st.markdown("## 👥 Team Human Metrics")
+st.markdown("""
+**The following are the averages for the program and below the breakdown for the selected startup**
+""")
 
 team_columns = [
     "Conflict resolution | Average",
