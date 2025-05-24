@@ -558,7 +558,7 @@ render_flag_section("Green", "Reward | Green_exp", "green")
 render_flag_section("Yellow", "Reward | Yellow_exp", "orange")
 render_flag_section("Red", "Reward | Red_exp", "red")
 
-st.markdown("### 👥 Team Human Due Diligence")
+st.markdown("### 👥 Human Call Results")
 
 st.markdown("""
 This section reflects qualitative human due diligence conducted through evaluator calls.  
@@ -587,7 +587,7 @@ st.markdown(f"**Evaluator:** {hdd_evaluator}")
 st.markdown("**📝 Notes from the call:**")
 st.info(hdd_notes)
 
-st.markdown("### 🧪 Scientific Due Diligence")
+st.markdown("### 🧪 Scientific Analysis Results")
 
 # === BRS – Brief Resilience Scale
 st.markdown("""
