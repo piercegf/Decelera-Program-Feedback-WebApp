@@ -386,7 +386,6 @@ fig_team.update_layout(
 
 st.plotly_chart(fig_team, use_container_width=True)
 
-
 # === Average Risk (Row 1)
 risk_col = st.columns([1])[0]
 risk_col.metric("Average Risk", round(row.get("Average RISK", 0), 2))
@@ -463,22 +462,22 @@ def render_flag_section(title, field, color):
     if values:
         st.markdown(f"**<span style='color:{color}; font-weight:600'>{title}</span>**", unsafe_allow_html=True)
         for v in values:
-            st.markdown(f"- {v}")
+            st.markdown(f"{v}")
     else:
         st.markdown(f"**<span style='color:{color}; font-weight:600'>{title}</span>**: _None_", unsafe_allow_html=True)
 
 
 # === Risk Flags
 st.markdown("#### ⚠️ Risk Flags")
-render_flag_section("Green", "RISK | Fields_Green", "green")
-render_flag_section("Yellow", "RISK | Fields_Yellow", "orange")
-render_flag_section("Red", "RISK | Fields_Red", "red")
+render_flag_section("Green", "RISK | Green_exp", "green")
+render_flag_section("Yellow", "RISK | Yellow_exp", "orange")
+render_flag_section("Red", "RISK | Red_exp", "red")
 
 # === Reward Flags
 st.markdown("#### 🎯 Reward Flags")
-render_flag_section("Green", "Reward | Fields_Green", "green")
-render_flag_section("Yellow", "Reward | Fields_Yellow", "orange")
-render_flag_section("Red", "Reward | Fields_Red", "red")
+render_flag_section("Green", "Reward | Green_exp", "green")
+render_flag_section("Yellow", "Reward | Yellow_exp", "orange")
+render_flag_section("Red", "Reward | Red_exp", "red")
 
 st.markdown("### 👥 Team Human Due Diligence")
 
