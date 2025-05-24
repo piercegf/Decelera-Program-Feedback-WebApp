@@ -296,6 +296,10 @@ st.markdown("---")
 # -------------------------------------------------------------------
 st.subheader("🧠 Unconventional Thinking")
 
+startup_ut_tags = normalize_list(row.get("Talks | Unconventional Thinking", []))
+bonus_total     = sum("bonus" in str(t).lower() for t in startup_ut_tags)
+red_flag_total  = sum("red"   in str(t).lower() for t in startup_ut_tags)
+
 #–– startup-level UT tallies  (2-column row)
 col_bonus, col_red = st.columns(2)
 col_bonus.metric("⭐ Bonus Star", int(bonus_total))
