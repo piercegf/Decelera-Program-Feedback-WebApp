@@ -450,38 +450,67 @@ fig_team.update_layout(
 
 st.plotly_chart(fig_team, use_container_width=True)
 
-_HDR_RE = re.compile(r"([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+:)")   # ≥2 words, then :
+JUDGE_NAMES = [
+    "Jorge Gonzalez-Iglesias",
+    "Juan de Antonio",
+    "Adam Beguelin",
+    "Alejandro Lopez",
+    "Alex Barrera",
+    "Álvaro Dexeus",
+    "Anastasia Dedyukhina",
+    "Andrea Klimowitz",
+    "Anna  Fedulow",
+    "Bastien  Pierre Jean Gambini",
+    "Beth Susanne",
+    "David Beratech",
+    "Elise Mitchell",
+    "Esteban Urrea",
+    "Fernando Cabello-Astolfi",
+    "Gennaro Bifulco",
+    "Ivan Alaiz",
+    "Ivan Nabalon",
+    "Iván Peña",
+    "Jair Halevi",
+    "Jason Eckenroth",
+    "Javier Darriba",
+    "Juan Pablo Tejela",
+    "Laura Montells",
+    "Manel Adell",
+    "Oscar Macia",
+    "Paul Ford",
+    "Pedro Claveria",
+    "Philippe Gelis",
+    "Ranny Nachmais",
+    "Rebeca De Sancho",
+    "Rui Fernandes",
+    "Sean Cook",
+    "Shadi  Yazdan",
+    "Shari Swan",
+    "Stacey  Ford",
+    "Sven  Huber",
+    "Torsten Kolind",
+]
+
+# Pre-escape and join into one alternation
+_NAME_PATTERN = "|".join(re.escape(n) for n in JUDGE_NAMES)
+# Will match any of the names, not already preceded by <br>, followed by a colon:
+_NAME_RE = re.compile(rf"(?<!<br>)(?:{_NAME_PATTERN}):")
 
 def _split_lines(raw_html: str) -> list[str]:
-    """
-    Return a clean list of logical lines.
-    Adds a <br> *before* any 'Firstname Lastname:' header that wasn't already
-    at the start of a line.
-    """
-    # put a break in front of every header that is not *already* preceded by <br>
-    fixed = _HDR_RE.sub(r"<br>\1", raw_html)
-    # split on <br> and strip whitespace
-    return [l.strip() for l in fixed.split("<br>") if l.strip()]
+    fixed = _NAME_RE.sub(lambda m: "<br>" + m.group(0), raw_html)
+    return [line.strip() for line in fixed.split("<br>") if line.strip()]
 
-# ──────────────────────────────────────────────────────────────────────────
-# Group feedback chunks by mentor
-# ──────────────────────────────────────────────────────────────────────────
 def _group_by_mentor(raw_html: str):
     lines = _split_lines(raw_html)
-
     mentor, bucket = "Anonymous", []
     for line in lines:
-        # header?  (full line, ≥2‐word name, ends with :)
-        if _HDR_RE.fullmatch(line):
-            # flush the previous mentor
+        if _NAME_RE.fullmatch(line + ":"):   # or use: if line in JUDGE_NAMES
             if bucket:
                 yield mentor, "\n".join(bucket).strip()
                 bucket = []
-            mentor = line[:-1].strip()          # drop trailing ':'
+            mentor = line[:-1]
             continue
-
         bucket.append(line)
-
     if bucket:
         yield mentor, "\n".join(bucket).strip()
 
