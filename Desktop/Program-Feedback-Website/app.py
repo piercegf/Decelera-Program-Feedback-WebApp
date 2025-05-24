@@ -291,6 +291,60 @@ col_ratio.metric("🟢 Yes Ratio", f"{yes_ratio:.1f}%" if total_votes else "—"
 # horizontal rule between the two big blocks
 st.markdown("---")
 
+# === Average Risk (Row 1)
+risk_col = st.columns([1])[0]
+risk_col.metric("Average Risk", round(row.get("Average RISK", 0), 2))
+
+# === Average Reward (Row 3)
+reward_col = st.columns([1])[0]
+reward_col.metric("Average Reward", round(row.get("Average Reward", 0), 2))
+
+st.subheader("Risk Breakdown")
+
+risk_scores = {
+    "State of Development": row.get("Average RISK | State of development_Score", 0),
+    "Momentum": row.get("Average RISK | Momentum_Score", 0),
+    "Management": row.get("Average RISK | Management_Score", 0),
+}
+
+risk_df = pd.DataFrame.from_dict(risk_scores, orient="index", columns=["Score"]).reset_index()
+risk_df.columns = ["Category", "Score"]
+
+fig_risk = px.bar(
+    risk_df,
+    x="Category",
+    y="Score",
+    text="Score",
+    color_discrete_sequence=["rgb(29, 202, 237)"]
+)
+fig_risk.update_traces(texttemplate='%{text:.2f}', textposition='outside')
+fig_risk.update_layout(yaxis_range=[0, 4], height=400)
+
+st.plotly_chart(fig_risk, use_container_width=True)
+
+st.subheader("Reward Breakdown")
+
+reward_scores = {
+    "Market": row.get("Average Reward | Market_Score", 0),
+    "Team": row.get("Average Reward | Team_Score", 0),
+    "Pain": row.get("Average Reward | Pain_Score", 0),
+    "Scalability": row.get("Average Reward | Scalability_Score", 0),
+}
+
+reward_df = pd.DataFrame.from_dict(reward_scores, orient="index", columns=["Score"]).reset_index()
+reward_df.columns = ["Category", "Score"]
+
+fig_reward = px.bar(
+    reward_df,
+    x="Category",
+    y="Score",
+    text="Score",
+    color_discrete_sequence=["rgb(29, 202, 237)"]
+)
+fig_reward.update_traces(texttemplate='%{text:.2f}', textposition='outside')
+fig_reward.update_layout(yaxis_range=[0, 4], height=400)
+
+st.plotly_chart(fig_reward, use_container_width=True)
 # -------------------------------------------------------------------
 # 🧠 2) UNCONVENTIONAL THINKING  ─────────────────────────────────────
 # -------------------------------------------------------------------
