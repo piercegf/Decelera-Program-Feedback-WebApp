@@ -291,6 +291,9 @@ st.markdown("---")
 
 st.subheader("Risk/Reward")
 
+col1.metric("Average Risk", f"{avg_risk:.2f}" if pd.notna(avg_risk) else "N/A")
+col2.metric("Average Reward", f"{avg_reward:.2f}" if pd.notna(avg_reward) else "N/A")
+
 # === Average Risk (Row 1)
 risk_col = st.columns([1])[0]
 risk_col.metric("Average Risk", round(row.get("Average RISK", 0), 2))
@@ -452,7 +455,7 @@ render_flag_section("Green", "Reward | Green_exp", "green")
 render_flag_section("Yellow", "Reward | Yellow_exp", "orange")
 render_flag_section("Red", "Reward | Red_exp", "red")
 
-st.markdown("### 👥 Individual Human Metrics")
+st.markdown("## 👥 Individual Human Metrics")
 
 # -------------------------------------------------------------------
 # 🧠 2) UNCONVENTIONAL THINKING  ─────────────────────────────────────
