@@ -131,28 +131,14 @@ df = df[df["Id"].notna()]
 df["Id"] = df["Id"].astype(str)
 
 # === General Stats ===
-st.title("Program Feedback Dashboard")
+st.title("Decelera 2025 Program Feedback Dashboard")
 
 st.markdown("""
-**This dashboard summarizes real-time feedback from Decelera Experience Makers.**  
+**This dashboard summarizes real-time feedback from Decelera Experience Makers, from the team, and multiple due dilligiences conducted.**  
 Each startup is assessed across two key dimensions:
-
-- **Risk**: based on  
-  • *State of Development: How do you assess the current State of Development of the product?*  
-  • *Momentum: Is the market momentum favorable in terms of trends, legislation, and market dynamics?*  
-  • *Management: Does the company have the necessary expertise and execute effectively?*
-
-- **Reward**: based on  
-  • *Market potential: Is it large, accessible, and not overly competitive?*  
-  • *Team strength: Does the team seem to have a strong bond and complement each other?*  
-  • *Pain relevance: Does it address a real and significant problem in the market?*  
-  • *Scalability: Is there a clear and feasible path for growth and expansion?*
-
-All metrics are scored on a **scale from 1 to 4**, with 4 being the most favorable.
 
 Use the dropdown below to explore each startup’s evaluation, or scroll down for program-wide insights.
             
-If you want to refresh the data just simply refresh the page!
 """)
 
 
@@ -306,6 +292,19 @@ risk_col, reward_col = st.columns(2)
 
 risk_col.metric("Average Risk", round(row.get("Average RISK", 0), 2))
 reward_col.metric("Average Reward", round(row.get("Average Reward", 0), 2))
+
+st.markdown("""- **Risk**: based on  
+  • *State of Development: How do you assess the current State of Development of the product?*  
+  • *Momentum: Is the market momentum favorable in terms of trends, legislation, and market dynamics?*  
+  • *Management: Does the company have the necessary expertise and execute effectively?*
+
+- **Reward**: based on  
+  • *Market potential: Is it large, accessible, and not overly competitive?*  
+  • *Team strength: Does the team seem to have a strong bond and complement each other?*  
+  • *Pain relevance: Does it address a real and significant problem in the market?*  
+  • *Scalability: Is there a clear and feasible path for growth and expansion?*
+
+All metrics are scored on a **scale from 1 to 4**, with 4 being the most favorable.""")
 
 st.subheader("Risk Breakdown")
 
