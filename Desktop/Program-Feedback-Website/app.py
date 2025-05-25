@@ -291,16 +291,16 @@ st.markdown("---")
 
 st.subheader("Risk/Reward")
 
+st.markdown("The following are the averages for the PROGRAM")
 col11, col22= st.columns(2)
 col11.metric("Average Risk", f"{avg_risk:.2f}" if pd.notna(avg_risk) else "N/A")
 col22.metric("Average Reward", f"{avg_reward:.2f}" if pd.notna(avg_reward) else "N/A")
 
-# === Average Risk (Row 1)
-risk_col = st.columns([1])[0]
-risk_col.metric("Average Risk", round(row.get("Average RISK", 0), 2))
+# === Average Risk and Reward (Side by Side)
+st.markdown("The following are the averages for the STARTUP you selected")
+risk_col, reward_col = st.columns(2)
 
-# === Average Reward (Row 3)
-reward_col = st.columns([1])[0]
+risk_col.metric("Average Risk", round(row.get("Average RISK", 0), 2))
 reward_col.metric("Average Reward", round(row.get("Average Reward", 0), 2))
 
 st.subheader("Risk Breakdown")
