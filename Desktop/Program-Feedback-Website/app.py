@@ -452,9 +452,12 @@ render_flag_section("Green", "Reward | Green_exp", "green")
 render_flag_section("Yellow", "Reward | Yellow_exp", "orange")
 render_flag_section("Red", "Reward | Red_exp", "red")
 
+st.markdown("### 👥 Individual Human Metrics")
+
 # -------------------------------------------------------------------
 # 🧠 2) UNCONVENTIONAL THINKING  ─────────────────────────────────────
 # -------------------------------------------------------------------
+
 st.subheader("🧠 Unconventional Thinking")
 
 #–– STARTUP-LEVEL TAG TALLY ─────────────────────────────────────────
