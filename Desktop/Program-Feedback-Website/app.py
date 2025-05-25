@@ -291,8 +291,9 @@ st.markdown("---")
 
 st.subheader("Risk/Reward")
 
-col1.metric("Average Risk", f"{avg_risk:.2f}" if pd.notna(avg_risk) else "N/A")
-col2.metric("Average Reward", f"{avg_reward:.2f}" if pd.notna(avg_reward) else "N/A")
+col11, col22= st.columns(2)
+col11.metric("Average Risk", f"{avg_risk:.2f}" if pd.notna(avg_risk) else "N/A")
+col22.metric("Average Reward", f"{avg_reward:.2f}" if pd.notna(avg_reward) else "N/A")
 
 # === Average Risk (Row 1)
 risk_col = st.columns([1])[0]
