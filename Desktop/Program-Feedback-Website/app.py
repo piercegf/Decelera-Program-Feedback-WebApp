@@ -103,7 +103,7 @@ st.set_page_config(
     page_icon=".streamlit/static/favicon.png",  # or "🚀", or "📊", or a path to a .png
     layout="wide"
 )
-st.image("https://skipsolabs-innovation.s3.eu-west-1.amazonaws.com/frontend/section/partners/510/5951fa68d05d4caa02c8.png", width=500)
+st.image("https://images.squarespace-cdn.com/content/v1/67811e8fe702fd5553c65249/749161ba-4abb-4514-9642-edc82c1c9c9d/Decelera-Logo.png?format=1500w", width=500)
 
 # === Airtable Config ===
 AIRTABLE_PAT = st.secrets["airtable"]["api_key"]
@@ -224,6 +224,8 @@ fig = px.scatter(
         "Average Reward": "Reward Score"
     }
 )
+fig.update_xaxes(autorange = "reversed")
+
 
 # Improve style
 fig.update_traces(textposition='top center', marker=dict(size=12, line=dict(width=1, color='DarkSlateGrey')))
@@ -273,6 +275,8 @@ st.markdown(" ")
 # -------------------------------------------------------------------
 # 💸 1) INVESTABILITY  ───────────────────────────────────────────────
 # -------------------------------------------------------------------
+st.markdown("## Business Metrics")
+
 st.subheader("💸 Investability")
 
 yes_votes  = row.get("Investable_Yes_Count", 0) or 0
