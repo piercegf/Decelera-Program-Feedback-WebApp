@@ -7,6 +7,7 @@ import plotly.graph_objects as go
 from collections import defaultdict
 import numpy as np
 import re
+import streamlit.components.v1 as components
 
 # === Manual ID → Startup Name mapping ===
 id_to_name = {
@@ -364,7 +365,7 @@ JUDGE_NAMES = [
     "Juan Pablo Tejela", "Laura Montells", "Manel Adell", "Oscar Macia",
     "Paul Ford", "Pedro Claveria", "Philippe Gelis", "Ranny Nachmais",
     "Rebeca De Sancho", "Rui Fernandes", "Sean Cook", "Shadi  Yazdan",
-    "Shari Swan", "Stacey  Ford", "Sven  Huber", "Torsten Kolind", "Jaime"
+    "Shari Swan", "Stacey  Ford", "Sven  Huber", "Torsten Kolind", "Jaime", "John Varuguese", "Elise Mitchel"
 ]
 
 # --- 2. Simple HTML cleaner (unchanged) ------------------------------------
@@ -474,7 +475,7 @@ render_flag_section("Green", "Reward | Green_exp", "green")
 render_flag_section("Yellow", "Reward | Yellow_exp", "orange")
 render_flag_section("Red", "Reward | Red_exp", "red")
 
-st.subheader("## 👤 Individual Human Metrics")
+st.subheader("👤 Individual Human Metrics")
 
 # -------------------------------------------------------------------
 # 🧠 2) UNCONVENTIONAL THINKING  ─────────────────────────────────────
@@ -822,3 +823,54 @@ olbi_summary = f"""
 **Disengagement:** {flag_color(olbi_disengage)} {olbi_disengage}
 """
 st.success(olbi_summary)
+
+components.html(
+    """
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+      #pdf-btn {                /* simple styling */
+        margin: 1.2rem 0 2rem;
+        padding: 0.6rem 1rem;
+        background:#0b6abf;
+        color:#fff; border:none; border-radius:4px;
+        font-size:1rem; cursor:pointer;
+      }
+    </style>
+
+    <button id="pdf-btn">⬇️ Download this page as PDF</button>
+
+    <script>
+    const { jsPDF } = window.jspdf;
+
+    document.getElementById('pdf-btn').addEventListener('click', () => {
+      // 1️⃣  Render the full body to a canvas (2× scale for sharper text)
+      html2canvas(document.body, { scale: 2 }).then(canvas => {
+
+        // 2️⃣  Convert canvas to PNG & stream into a multipage PDF
+        const imgData   = canvas.toDataURL('image/png');
+        const pdf       = new jsPDF('p', 'mm', 'a4');
+        const pdfW      = pdf.internal.pageSize.getWidth();
+        const pdfH      = pdf.internal.pageSize.getHeight();
+        const imgW      = pdfW;
+        const imgH      = canvas.height * imgW / canvas.width;
+
+        let heightLeft  = imgH;
+        let position    = 0;
+
+        while (heightLeft > 0) {
+          pdf.addImage(imgData, 'PNG', 0, position, imgW, imgH);
+          heightLeft -= pdfH;
+          if (heightLeft > 0) {
+            position = heightLeft - imgH;
+            pdf.addPage();
+          }
+        }
+        pdf.save('streamlit_page.pdf');
+      });
+    });
+    </script>
+    """,
+    height=80,
+)
