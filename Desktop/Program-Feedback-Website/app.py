@@ -433,6 +433,35 @@ def _group_by_mentor(raw: str):
             yield mentor, _format_categories(comment)
 
 
+def render_flag_section(title: str, field: str, color: str):
+    values = row.get(field)
+    if isinstance(values, float) and pd.isna(values):
+        values = []
+    elif values is None:
+        values = []
+    elif isinstance(values, str):
+        values = [values]
+    elif not isinstance(values, list):
+        values = [str(values)]
+
+    st.markdown(f"**<span style='color:{color}; font-weight:600'>{title}</span>**",
+                unsafe_allow_html=True)
+
+    if not values:
+        st.markdown("_None_")
+        return
+
+    box = {"green": st.success,
+           "orange": st.warning,
+           "red": st.error}.get(color, st.info)
+
+    for raw in values:
+        for mentor, fb in _group_by_mentor(raw):
+            if fb:
+                box(f"**{mentor}**\n\n{_format_categories(fb)}")
+
+
+
 # === Risk Flags
 st.markdown("#### ⚠️ Risk Flags")
 render_flag_section("Green", "RISK | Green_exp", "green")
