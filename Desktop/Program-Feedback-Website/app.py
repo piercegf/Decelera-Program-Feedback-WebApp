@@ -12,7 +12,7 @@ import re
 id_to_name = {
     "2": "Heuristik",
     "3": "Metly",
-    "4": "Kalipso",
+    "4": "ByteHide",
     "6": "Skor",
     "7": "Robopedics",
     "9": "Quix",
@@ -372,7 +372,7 @@ JUDGE_NAMES = [
     "Gennaro Bifulco",
     "Ivan Alaiz",
     "Ivan Nabalon",
-    "Iván Peña",
+    "Ivan Peña",
     "Jair Halevi",
     "Jason Eckenroth",
     "Javier Darriba",
@@ -392,34 +392,73 @@ JUDGE_NAMES = [
     "Stacey  Ford",
     "Sven  Huber",
     "Torsten Kolind",
+    "Jaime"
 ]
 
-# Pre-escape and join into one alternation
-_NAME_PATTERN = "|".join(re.escape(n) for n in JUDGE_NAMES)
-# Will match any of the names, not already preceded by <br>, followed by a colon:
-_NAME_RE = re.compile(rf"(?<!<br>)(?:{_NAME_PATTERN}):")
+_HTML_BREAK_RE = re.compile(r"<br\s*/?>", flags=re.I)  # <br>, <br/>, <br />...
+def _clean_html(raw: str) -> str:
+    """Quita <br> y marcas **bold** ya existentes."""
+    if not isinstance(raw, str):
+        return raw or ""
+    txt = _HTML_BREAK_RE.sub("\n", raw)  # convierte todos los <br> a saltos de línea reales
+    txt = txt.replace("**", "")          # quita negritas que vengan del origen
+    return txt.strip()
 
-def _split_lines(raw_html: str) -> list[str]:
-    fixed = _NAME_RE.sub(lambda m: "<br>" + m.group(0), raw_html)
-    return [line.strip() for line in fixed.split("<br>") if line.strip()]
+_NAME_RE = re.compile(
+    r'\b(' + '|'.join(re.escape(n) for n in JUDGE_NAMES) + r')\b',
+    flags=re.I
+)
 
-def _group_by_mentor(raw_html: str):
-    lines = _split_lines(raw_html)
-    mentor, bucket = "Anonymous", []
-    for line in lines:
-        if _NAME_RE.fullmatch(line + ":"):   # or use: if line in JUDGE_NAMES
-            if bucket:
-                yield mentor, "\n".join(bucket).strip()
-                bucket = []
-            mentor = line[:-1]
-            continue
-        bucket.append(line)
-    if bucket:
-        yield mentor, "\n".join(bucket).strip()
+def _group_by_mentor(raw: str):
+    """
+    Devuelve pares (mentor, comentario) a partir del texto crudo de Airtable.
+    El texto puede contener varios mentores seguidos. Ej:
+        "Sean Cook<br>State... <br>Jorge Gonzalez-Iglesias Momentum..."
+    """
+    text = _clean_html(raw)          # quita <br>, **, etc.
+    hits = list(_NAME_RE.finditer(text))
 
-# ──────────────────────────────────────────────────────────────────────────
-# Same render_flag_section as before
-# ──────────────────────────────────────────────────────────────────────────
+    if not hits:
+        # no se reconoció ningún mentor
+        yield "Anonymous", text.strip()
+        return
+
+    for idx, hit in enumerate(hits):
+        mentor = hit.group(1).strip()
+        start  = hit.end()
+        end    = hits[idx + 1].start() if idx + 1 < len(hits) else len(text)
+        comment = text[start:end].lstrip(' :–').strip()   # quita separadores
+        if comment:
+            # Aplica el formateo de categorías (pone **Management:** en negrita)
+            yield mentor, _format_categories(comment)
+
+
+# Categorías que queremos resaltar
+CATS = [
+    "State of development", "Momentum", "Management",
+    "Market", "Team", "Pain", "Scalability",
+]
+_CAT_RE = re.compile(rf"\b({'|'.join(map(re.escape, CATS))})\s*:", flags=re.I)
+
+def _format_categories(text: str) -> str:
+    """
+    Pone en negrita cada etiqueta/categoría y las separa por salto de línea.
+    """
+    text = _clean_html(text)             # ya no hay <br> ni ** previas
+    parts = _CAT_RE.split(text)
+    out   = []
+
+    # texto que pueda haber antes de la primera categoría
+    if parts[0].strip():
+        out.append(parts[0].strip())
+
+    for i in range(1, len(parts), 2):
+        label, body = parts[i], parts[i + 1]
+        out.append(f"**{label.strip()}:** {body.strip()}")
+
+    return "\n".join(out)
+
+
 def render_flag_section(title: str, field: str, color: str):
     values = row.get(field)
     if isinstance(values, float) and pd.isna(values):
@@ -445,7 +484,9 @@ def render_flag_section(title: str, field: str, color: str):
     for raw in values:
         for mentor, fb in _group_by_mentor(raw):
             if fb:
-                box(f"**{mentor}**\n\n{fb}")
+                box(f"**{mentor}**\n\n{_format_categories(fb)}")
+
+
 
 # === Risk Flags
 st.markdown("#### ⚠️ Risk Flags")
@@ -459,7 +500,7 @@ render_flag_section("Green", "Reward | Green_exp", "green")
 render_flag_section("Yellow", "Reward | Yellow_exp", "orange")
 render_flag_section("Red", "Reward | Red_exp", "red")
 
-st.markdown("## 👥 Individual Human Metrics")
+st.subheader("## 👤 Individual Human Metrics")
 
 # -------------------------------------------------------------------
 # 🧠 2) UNCONVENTIONAL THINKING  ─────────────────────────────────────
@@ -478,40 +519,193 @@ col_red.metric("🚩 Red Flag",    int(red_flag_total))
 
 #–– FOUNDER-LEVEL BREAKDOWN ─────────────────────────────────────────
 # (this is the block that was missing)
-founder_links      = normalize_list(row.get("Talks | Unconventional Thinking Founder", []))
-founder_ut_tags    = normalize_list(row.get("Talks | Unconventional Thinking", []))
+founder_links_talks      = normalize_list(row.get("Talks | Unconventional Thinking Founder", []))
+founder_ut_tags_talks    = normalize_list(row.get("Talks | Unconventional Thinking", []))
 
-founder_ids        = [get_founder_id(f) for f in founder_links]
-founder_names      = [founder_id_to_name.get(fid, fid) for fid in founder_ids]
+founder_ids_talks        = [get_founder_id(f) for f in founder_links_talks]
+founder_names_talks      = [founder_id_to_name.get(fid, fid) for fid in founder_ids_talks]
 
-founder_counts     = defaultdict(lambda: {"Bonus Star": 0, "Red Flag": 0})
+founder_counts_talks     = defaultdict(lambda: {"Bonus Star": 0, "Red Flag": 0})
 
-for idx, fname in enumerate(founder_names):
-    tag = founder_ut_tags[idx] if idx < len(founder_ut_tags) else ""
+for idx, fname in enumerate(founder_names_talks):
+    tag = founder_ut_tags_talks[idx] if idx < len(founder_ut_tags_talks) else ""
     tag_lc = str(tag).lower()
     if "bonus" in tag_lc:
-        founder_counts[fname]["Bonus Star"] += 1
+        founder_counts_talks[fname]["Bonus Star"] += 1
     elif "red" in tag_lc:
-        founder_counts[fname]["Red Flag"] += 1
+        founder_counts_talks[fname]["Red Flag"] += 1
 
-ft_df = (pd.DataFrame.from_dict(founder_counts, orient="index")
+ft_df_talks = (pd.DataFrame.from_dict(founder_counts_talks, orient="index")
          .reset_index()
          .rename(columns={"index": "Founder"}))
 
 #–– PLOT OR INFO BOX ────────────────────────────────────────────────
-if not ft_df.empty:
+if not ft_df_talks.empty:
     fig_ft = px.bar(
-        ft_df,
+        ft_df_talks,
         x="Founder",
         y=["Bonus Star", "Red Flag"],
         barmode="group",
-        title="Unconventional-Thinking Tags per Founder",
+        title="Unconventional-Thinking Tags per Founder in Talks",
         color_discrete_map={"Bonus Star": "green", "Red Flag": "red"},
         height=350,
     )
     st.plotly_chart(fig_ft, use_container_width=True)
 else:
-    st.info("No founder-level unconventional-thinking feedback yet for this startup.")
+    st.info("No feedback for unconventional thinking in talks")
+
+#========Workstations Unconventional===============================================================
+
+table_works = normalize_list(row.get("Workstations | Unconventional Thinking (Founder & Score)", []))
+tags_works = [p.strip() for entry in table_works for p in entry.split(", ")]  # tenemos nuestra lista de founder: tag
+
+counts_works = defaultdict(lambda: {"Bonus Star": 0, "Red Flag": 0})  #con esto sumamos las flags y nos hacemos un dict
+for tag in tags_works:
+    parts = tag.split(": ")
+
+    if len(parts) != 2:
+        continue
+
+    name = parts[0].strip()
+    score = parts[1].strip()
+
+    if "Bonus" in score:
+        counts_works[name]["Bonus Star"] += 1
+    elif "Red" in score:
+        counts_works[name]["Red Flag"] += 1
+
+df_works = pd.DataFrame.from_dict(counts_works, orient="index").reset_index()
+df_works = df_works.rename(columns={"index": "Founder"})
+
+if not df_works.empty:
+    fig_ft = px.bar(
+        df_works,
+        x="Founder",
+        y=["Bonus Star", "Red Flag"],
+        barmode="group",
+        title="Unconventional-Thinking Tags per Founder in Workstations",
+        color_discrete_map={"Bonus Star": "green", "Red Flag": "red"},
+        height=350,
+    )
+    st.plotly_chart(fig_ft, use_container_width=True)
+else:
+    st.info("No feedback for unconventional thinking in workstations")
+
+# ========Individual contest results section========================================
+
+st.subheader("Individual Contest Results")
+
+table_ind_conf = normalize_list(row.get("Individual Contest | Confidence (Founder & Score)", []))
+tags_ind_conf = [p.strip() for entry in table_ind_conf for p in entry.split(", ")]
+
+table_ind_amb = normalize_list(row.get("Individual Contest | Ambition (Founder & Score)", []))
+tags_ind_amb = [p.strip() for entry in table_ind_amb for p in entry.split(", ")]
+
+table_ind_unc = normalize_list(row.get("Individual Contest | Unconventional Thinking (Founder & Score)", []))
+tags_ind_unc = [p.strip() for entry in table_ind_unc for p in entry.split(", ")]
+
+list_ind = [tags_ind_conf, tags_ind_amb, tags_ind_unc]
+titles = ["Confidence", "Ambition", "Unconventional Thinking"]
+
+i = 0
+for tags_ind in list_ind:
+    counts_works = defaultdict(lambda: {"Bonus Star": 0, "Red Flag": 0})  #con esto sumamos las flags y nos hacemos un dict
+    for tag in tags_ind:
+        parts = tag.split(": ")
+
+        if len(parts) != 2:
+            continue
+
+        name = parts[0].strip()
+        score = parts[1].strip()
+
+        if "Bonus" in score:
+            counts_works[name]["Bonus Star"] += 1
+        elif "Red" in score:
+            counts_works[name]["Red Flag"] += 1
+        
+    df_ind = pd.DataFrame.from_dict(counts_works, orient="index").reset_index()
+    df_ind = df_ind.rename(columns={"index": "Founder"})
+
+    if not df_ind.empty:
+        fig_ft = px.bar(
+            df_ind,
+            x="Founder",
+            y=["Bonus Star", "Red Flag"],
+            barmode="group",
+            title= titles[i],
+            color_discrete_map={"Bonus Star": "green", "Red Flag": "red"},
+            height=350,
+        )
+        st.plotly_chart(fig_ft, use_container_width=True, key=f"fig_{titles[i]}")
+    else:
+        st.info(f"No feedback for {titles[i]} in individual contest.")
+    i += 1
+
+# ====Individual Human Metrics========================================================
+
+table_purp = normalize_list(row.get("Purpose | Founder & Score", []))
+tags_purp = [p.strip() for entry in table_purp for p in entry.split(", ")]
+
+table_open = normalize_list(row.get("Openness | Founder & Score", []))
+tags_open = [p.strip() for entry in table_open for p in entry.split(", ")]
+
+table_int = normalize_list(row.get("Integrity and honesty | Founder & Score", []))
+tags_int = [p.strip() for entry in table_int for p in entry.split(", ")]
+
+table_rel = normalize_list(row.get("Relevant experience | Founder & Score", []))
+tags_rel = [p.strip() for entry in table_rel for p in entry.split(", ")]
+
+table_vis = normalize_list(row.get("Visionary leadership | Founder & Score", []))
+tags_vis = [p.strip() for entry in table_vis for p in entry.split(", ")]
+
+table_flex = normalize_list(row.get("Flexibility | Founder & Score", []))
+tags_flex = [p.strip() for entry in table_flex for p in entry.split(", ")]
+
+table_emo = normalize_list(row.get("Emotional intelligence | Founder & Score", []))
+tags_emo = [p.strip() for entry in table_emo for p in entry.split(", ")]
+
+list_hum = [tags_purp, tags_open, tags_int, tags_rel, tags_vis, tags_flex, tags_emo]
+campos_hum = ["Purpose", "Openness", "Integrity and honesty", "Relevant experience", "Visionary leadership", "Flexibility", "Emotional intelligence"]
+
+rec_hum = defaultdict(lambda: defaultdict(list))
+
+for i, lista in enumerate(list_hum):
+    campo = campos_hum[i]
+    for entrada in lista:
+        if ": " in entrada:
+            nombre, valor = entrada.split(": ")
+            try:
+                rec_hum[nombre.strip()][campo].append(float(valor.strip()))
+            except ValueError:
+                continue
+
+df_hum = {}
+for nombre, campos in rec_hum.items():
+    rows = []
+    for campo, valores in campos.items():
+        if valores:
+            media = sum(valores) / len(valores)
+            rows.append({"Campo": campo, "Media": media})
+    df_hum[nombre] = pd.DataFrame(rows)
+
+i = 0
+for nombre, data in df_hum.items():
+    if not data.empty:
+            fig_ft = px.bar(
+                data,
+                x="Campo",
+                y="Media",
+                barmode="group",
+                title= f"{nombre}",
+                color_discrete_sequence=["rgb(52, 199, 89)"],
+                height=350,
+            )
+            st.plotly_chart(fig_ft, use_container_width=True, key=f"fig_{i}")
+            i +=1
+    else:
+        st.info(f"No feedback for individual metrics.")
+
 
 # === Team Human Metrics =====================================================
 st.markdown("## 👥 Team Human Metrics")
@@ -531,22 +725,22 @@ team_columns = [
 ]
 
 # --- Scores for the chosen startup ------------------------------------------
-startup_scores = {c.split(" |")[0]: row.get(c, 0) for c in team_columns}
+startup_team_scores = {c.split(" |")[0]: row.get(c, 0) for c in team_columns}
 
 # --- Cohort-wide averages ----------------------------------------------------
-cohort_means = df[team_columns].mean()
+cohort_team_means = df[team_columns].mean()
 
 # ── Show cohort averages as headline metrics ────────────────────────────────
 avg_cols = st.columns(len(team_columns))
 for i, col in enumerate(team_columns):
     pillar = col.split(" |")[0]
-    avg_cols[i].metric(pillar, f"{cohort_means[col]:.2f}")
+    avg_cols[i].metric(pillar, f"{cohort_team_means[col]:.2f}")
 
 # ── Bar chart of the startup’s own scores ───────────────────────────────────
 team_df = (
     pd.DataFrame({
-        "Metric": list(startup_scores.keys()),
-        "Score":  list(startup_scores.values()),
+        "Metric": list(startup_team_scores.keys()),
+        "Score":  list(startup_team_scores.values()),
     })
 )
 
@@ -567,6 +761,7 @@ fig_team.update_layout(
 
 st.plotly_chart(fig_team, use_container_width=True)
 
+# =====Human Call Results Section========================================
 
 st.markdown("### 👥 Human Call Results")
 
