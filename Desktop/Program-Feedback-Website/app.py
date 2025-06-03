@@ -824,15 +824,21 @@ olbi_summary = f"""
 """
 st.success(olbi_summary)
 
-components.html(
+# ------------------------------------------------------------------
+# 📄  FULL-PAGE “Save as PDF” button – paste at bottom of app.py
+# ------------------------------------------------------------------
+import streamlit as st
+
+st.markdown(
     """
+    <!--  html2canvas + jsPDF from CDNs  -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
-      #pdf-btn {                /* simple styling */
-        margin: 1.2rem 0 2rem;
-        padding: 0.6rem 1rem;
+      #pdf-btn {
+        margin: 1.5rem 0 2.5rem;
+        padding: 0.6rem 1.2rem;
         background:#0b6abf;
         color:#fff; border:none; border-radius:4px;
         font-size:1rem; cursor:pointer;
@@ -842,35 +848,35 @@ components.html(
     <button id="pdf-btn">⬇️ Download this page as PDF</button>
 
     <script>
-    const { jsPDF } = window.jspdf;
+      const { jsPDF } = window.jspdf;
 
-    document.getElementById('pdf-btn').addEventListener('click', () => {
-      // 1️⃣  Render the full body to a canvas (2× scale for sharper text)
-      html2canvas(document.body, { scale: 2 }).then(canvas => {
+      document.getElementById('pdf-btn').addEventListener('click', () => {
+        //  Wait a tick so any expanding elements finish animating
+        setTimeout(() => {
+          html2canvas(document.body, { scale: 2, useCORS: true }).then(canvas => {
+            const imgData  = canvas.toDataURL('image/png');
+            const pdf      = new jsPDF('p', 'mm', 'a4');
+            const pdfW     = pdf.internal.pageSize.getWidth();
+            const pdfH     = pdf.internal.pageSize.getHeight();
+            const imgW     = pdfW;
+            const imgH     = canvas.height * imgW / canvas.width;
 
-        // 2️⃣  Convert canvas to PNG & stream into a multipage PDF
-        const imgData   = canvas.toDataURL('image/png');
-        const pdf       = new jsPDF('p', 'mm', 'a4');
-        const pdfW      = pdf.internal.pageSize.getWidth();
-        const pdfH      = pdf.internal.pageSize.getHeight();
-        const imgW      = pdfW;
-        const imgH      = canvas.height * imgW / canvas.width;
+            let heightLeft = imgH;
+            let position   = 0;
 
-        let heightLeft  = imgH;
-        let position    = 0;
-
-        while (heightLeft > 0) {
-          pdf.addImage(imgData, 'PNG', 0, position, imgW, imgH);
-          heightLeft -= pdfH;
-          if (heightLeft > 0) {
-            position = heightLeft - imgH;
-            pdf.addPage();
-          }
-        }
-        pdf.save('streamlit_page.pdf');
+            while (heightLeft > 0) {
+              pdf.addImage(imgData, 'PNG', 0, position, imgW, imgH);
+              heightLeft -= pdfH;
+              if (heightLeft > 0) {
+                position = heightLeft - imgH;
+                pdf.addPage();
+              }
+            }
+            pdf.save('streamlit_page.pdf');
+          });
+        }, 100);
       });
-    });
     </script>
     """,
-    height=80,
+    unsafe_allow_html=True,
 )
