@@ -353,87 +353,41 @@ fig_reward.update_layout(yaxis_range=[0, 4], height=400)
 
 st.plotly_chart(fig_reward, use_container_width=True)
 
+# --- 1. Names list stays the same ------------------------------------------
 JUDGE_NAMES = [
-    "Jorge Gonzalez-Iglesias",
-    "Juan de Antonio",
-    "Adam Beguelin",
-    "Alejandro Lopez",
-    "Alex Barrera",
-    "Álvaro Dexeus",
-    "Anastasia Dedyukhina",
-    "Andrea Klimowitz",
-    "Anna  Fedulow",
-    "Bastien  Pierre Jean Gambini",
-    "Beth Susanne",
-    "David Beratech",
-    "Elise Mitchell",
-    "Esteban Urrea",
-    "Fernando Cabello-Astolfi",
-    "Gennaro Bifulco",
-    "Ivan Alaiz",
-    "Ivan Nabalon",
-    "Ivan Peña",
-    "Jair Halevi",
-    "Jason Eckenroth",
-    "Javier Darriba",
-    "Juan Pablo Tejela",
-    "Laura Montells",
-    "Manel Adell",
-    "Oscar Macia",
-    "Paul Ford",
-    "Pedro Claveria",
-    "Philippe Gelis",
-    "Ranny Nachmais",
-    "Rebeca De Sancho",
-    "Rui Fernandes",
-    "Sean Cook",
-    "Shadi  Yazdan",
-    "Shari Swan",
-    "Stacey  Ford",
-    "Sven  Huber",
-    "Torsten Kolind",
-    "Jaime"
+    "Jorge Gonzalez-Iglesias", "Juan de Antonio", "Adam Beguelin",
+    "Alejandro Lopez", "Alex Barrera", "Álvaro Dexeus", "Anastasia Dedyukhina",
+    "Andrea Klimowitz", "Anna  Fedulow", "Bastien  Pierre Jean Gambini",
+    "Beth Susanne", "David Beratech", "Elise Mitchell", "Esteban Urrea",
+    "Fernando Cabello-Astolfi", "Gennaro Bifulco", "Ivan Alaiz", "Ivan Nabalon",
+    "Ivan Peña", "Jair Halevi", "Jason Eckenroth", "Javier Darriba",
+    "Juan Pablo Tejela", "Laura Montells", "Manel Adell", "Oscar Macia",
+    "Paul Ford", "Pedro Claveria", "Philippe Gelis", "Ranny Nachmais",
+    "Rebeca De Sancho", "Rui Fernandes", "Sean Cook", "Shadi  Yazdan",
+    "Shari Swan", "Stacey  Ford", "Sven  Huber", "Torsten Kolind", "Jaime"
 ]
 
-_HTML_BREAK_RE = re.compile(r"<br\s*/?>", flags=re.I)  # <br>, <br/>, <br />...
+# --- 2. Simple HTML cleaner (unchanged) ------------------------------------
+_HTML_BREAK_RE = re.compile(r"<br\s*/?>", flags=re.I)
+
 def _clean_html(raw: str) -> str:
-    """Quita <br> y marcas **bold** ya existentes."""
     if not isinstance(raw, str):
         return raw or ""
-    txt = _HTML_BREAK_RE.sub("\n", raw)  # convierte todos los <br> a saltos de línea reales
-    txt = txt.replace("**", "")          # quita negritas que vengan del origen
+    txt = _HTML_BREAK_RE.sub("\n", raw)
+    txt = txt.replace("**", "")
     return txt.strip()
 
+# --- 3. Updated NAME regex --------------------------------------------------
+# It matches a judge name followed by EITHER:
+#   • end-of-string
+#   • whitespace
+#   • a capital letter (for “State”, “Momentum”…), a colon, or a newline
 _NAME_RE = re.compile(
-    r'\b(' + '|'.join(re.escape(n) for n in JUDGE_NAMES) + r')\b',
+    r"(" + "|".join(re.escape(n) for n in JUDGE_NAMES) + r")(?=$|\s|[A-Z])",
     flags=re.I
 )
 
-def _group_by_mentor(raw: str):
-    """
-    Devuelve pares (mentor, comentario) a partir del texto crudo de Airtable.
-    El texto puede contener varios mentores seguidos. Ej:
-        "Sean Cook<br>State... <br>Jorge Gonzalez-Iglesias Momentum..."
-    """
-    text = _clean_html(raw)          # quita <br>, **, etc.
-    hits = list(_NAME_RE.finditer(text))
-
-    if not hits:
-        # no se reconoció ningún mentor
-        yield "Anonymous", text.strip()
-        return
-
-    for idx, hit in enumerate(hits):
-        mentor = hit.group(1).strip()
-        start  = hit.end()
-        end    = hits[idx + 1].start() if idx + 1 < len(hits) else len(text)
-        comment = text[start:end].lstrip(' :–').strip()   # quita separadores
-        if comment:
-            # Aplica el formateo de categorías (pone **Management:** en negrita)
-            yield mentor, _format_categories(comment)
-
-
-# Categorías que queremos resaltar
+# --- 4. Category formatting helper (unchanged) -----------------------------
 CATS = [
     "State of development", "Momentum", "Management",
     "Market", "Team", "Pain", "Scalability",
@@ -441,15 +395,11 @@ CATS = [
 _CAT_RE = re.compile(rf"\b({'|'.join(map(re.escape, CATS))})\s*:", flags=re.I)
 
 def _format_categories(text: str) -> str:
-    """
-    Pone en negrita cada etiqueta/categoría y las separa por salto de línea.
-    """
-    text = _clean_html(text)             # ya no hay <br> ni ** previas
+    text = _clean_html(text)
     parts = _CAT_RE.split(text)
-    out   = []
+    out = []
 
-    # texto que pueda haber antes de la primera categoría
-    if parts[0].strip():
+    if parts and parts[0].strip():
         out.append(parts[0].strip())
 
     for i in range(1, len(parts), 2):
@@ -458,34 +408,29 @@ def _format_categories(text: str) -> str:
 
     return "\n".join(out)
 
+# --- 5. MAIN function: split raw feedback by mentor ------------------------
+def _group_by_mentor(raw: str):
+    """
+    Yields (mentor, formatted_comment) pairs from a free-text field that may
+    contain several mentors one after another, even without whitespace.
 
-def render_flag_section(title: str, field: str, color: str):
-    values = row.get(field)
-    if isinstance(values, float) and pd.isna(values):
-        values = []
-    elif values is None:
-        values = []
-    elif isinstance(values, str):
-        values = [values]
-    elif not isinstance(values, list):
-        values = [str(values)]
+    Example raw input accepted:
+        "Sean CookState of development: ...Momentum: ...Jorge Gonzalez-IglesiasState of development: ..."
+    """
+    text = _clean_html(raw)
+    hits = list(_NAME_RE.finditer(text))
 
-    st.markdown(f"**<span style='color:{color}; font-weight:600'>{title}</span>**",
-                unsafe_allow_html=True)
-
-    if not values:
-        st.markdown("_None_")
+    if not hits:
+        yield "Anonymous", text.strip()
         return
 
-    box = {"green": st.success,
-           "orange": st.warning,
-           "red": st.error}.get(color, st.info)
-
-    for raw in values:
-        for mentor, fb in _group_by_mentor(raw):
-            if fb:
-                box(f"**{mentor}**\n\n{_format_categories(fb)}")
-
+    for idx, hit in enumerate(hits):
+        mentor = hit.group(1).strip()
+        start  = hit.end()
+        end    = hits[idx + 1].start() if idx + 1 < len(hits) else len(text)
+        comment = text[start:end].lstrip(' :–').strip()
+        if comment:
+            yield mentor, _format_categories(comment)
 
 
 # === Risk Flags
