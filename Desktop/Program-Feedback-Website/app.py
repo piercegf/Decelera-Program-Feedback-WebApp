@@ -475,149 +475,100 @@ render_flag_section("Green", "Reward | Green_exp", "green")
 render_flag_section("Yellow", "Reward | Yellow_exp", "orange")
 render_flag_section("Red", "Reward | Red_exp", "red")
 
-st.subheader("👤 Individual Human Metrics")
+st.markdown("## 👤 Individual Human Metrics")
 
 # -------------------------------------------------------------------
 # 🧠 2) UNCONVENTIONAL THINKING  ─────────────────────────────────────
 # -------------------------------------------------------------------
 
-st.subheader("🧠 Unconventional Thinking")
+startup_ut_talks = normalize_list(row.get("Talks | Unconventional thinking (Founder & Score)", []))
+talks_ut_list = [p.strip() for entry in startup_ut_talks for p in entry.split(", ")]  # tenemos nuestra lista de founder: tag
 
-#–– STARTUP-LEVEL TAG TALLY ─────────────────────────────────────────
-startup_ut_tags = normalize_list(row.get("Talks | Unconventional Thinking", []))
-bonus_total     = sum("bonus" in str(t).lower() for t in startup_ut_tags)
-red_flag_total  = sum("red"   in str(t).lower() for t in startup_ut_tags)
+startup_ut_works = normalize_list(row.get("Workstations | Unconventional Thinking (Founder & Score)", []))
+works_ut_list = [p.strip() for entry in startup_ut_works for p in entry.split(", ")]
 
-col_bonus, col_red = st.columns(2)
-col_bonus.metric("⭐ Bonus Star", int(bonus_total))
-col_red.metric("🚩 Red Flag",    int(red_flag_total))
+startup_ut_ind = normalize_list(row.get("Individual Contest | Unconventional Thinking (Founder & Score)", []))
+ind_ut_list = [p.strip() for entry in startup_ut_ind for p in entry.split(", ")]
 
-#–– FOUNDER-LEVEL BREAKDOWN ─────────────────────────────────────────
-# (this is the block that was missing)
-founder_links_talks      = normalize_list(row.get("Talks | Unconventional Thinking Founder", []))
-founder_ut_tags_talks    = normalize_list(row.get("Talks | Unconventional Thinking", []))
-
-founder_ids_talks        = [get_founder_id(f) for f in founder_links_talks]
-founder_names_talks      = [founder_id_to_name.get(fid, fid) for fid in founder_ids_talks]
-
-founder_counts_talks     = defaultdict(lambda: {"Bonus Star": 0, "Red Flag": 0})
-
-for idx, fname in enumerate(founder_names_talks):
-    tag = founder_ut_tags_talks[idx] if idx < len(founder_ut_tags_talks) else ""
-    tag_lc = str(tag).lower()
-    if "bonus" in tag_lc:
-        founder_counts_talks[fname]["Bonus Star"] += 1
-    elif "red" in tag_lc:
-        founder_counts_talks[fname]["Red Flag"] += 1
-
-ft_df_talks = (pd.DataFrame.from_dict(founder_counts_talks, orient="index")
-         .reset_index()
-         .rename(columns={"index": "Founder"}))
-
-#–– PLOT OR INFO BOX ────────────────────────────────────────────────
-if not ft_df_talks.empty:
-    fig_ft = px.bar(
-        ft_df_talks,
-        x="Founder",
-        y=["Bonus Star", "Red Flag"],
-        barmode="group",
-        title="Unconventional-Thinking Tags per Founder in Talks",
-        color_discrete_map={"Bonus Star": "green", "Red Flag": "red"},
-        height=350,
-    )
-    st.plotly_chart(fig_ft, use_container_width=True)
-else:
-    st.info("No feedback for unconventional thinking in talks")
-
-#========Workstations Unconventional===============================================================
-
-table_works = normalize_list(row.get("Workstations | Unconventional Thinking (Founder & Score)", []))
-tags_works = [p.strip() for entry in table_works for p in entry.split(", ")]  # tenemos nuestra lista de founder: tag
-
-counts_works = defaultdict(lambda: {"Bonus Star": 0, "Red Flag": 0})  #con esto sumamos las flags y nos hacemos un dict
-for tag in tags_works:
-    parts = tag.split(": ")
-
-    if len(parts) != 2:
-        continue
-
-    name = parts[0].strip()
-    score = parts[1].strip()
-
-    if "Bonus" in score:
-        counts_works[name]["Bonus Star"] += 1
-    elif "Red" in score:
-        counts_works[name]["Red Flag"] += 1
-
-df_works = pd.DataFrame.from_dict(counts_works, orient="index").reset_index()
-df_works = df_works.rename(columns={"index": "Founder"})
-
-if not df_works.empty:
-    fig_ft = px.bar(
-        df_works,
-        x="Founder",
-        y=["Bonus Star", "Red Flag"],
-        barmode="group",
-        title="Unconventional-Thinking Tags per Founder in Workstations",
-        color_discrete_map={"Bonus Star": "green", "Red Flag": "red"},
-        height=350,
-    )
-    st.plotly_chart(fig_ft, use_container_width=True)
-else:
-    st.info("No feedback for unconventional thinking in workstations")
-
-# ========Individual contest results section========================================
-
-st.subheader("Individual Contest Results")
-
-table_ind_conf = normalize_list(row.get("Individual Contest | Confidence (Founder & Score)", []))
-tags_ind_conf = [p.strip() for entry in table_ind_conf for p in entry.split(", ")]
-
-table_ind_amb = normalize_list(row.get("Individual Contest | Ambition (Founder & Score)", []))
-tags_ind_amb = [p.strip() for entry in table_ind_amb for p in entry.split(", ")]
-
-table_ind_unc = normalize_list(row.get("Individual Contest | Unconventional Thinking (Founder & Score)", []))
-tags_ind_unc = [p.strip() for entry in table_ind_unc for p in entry.split(", ")]
-
-list_ind = [tags_ind_conf, tags_ind_amb, tags_ind_unc]
-titles = ["Confidence", "Ambition", "Unconventional Thinking"]
-
-i = 0
-for tags_ind in list_ind:
-    counts_works = defaultdict(lambda: {"Bonus Star": 0, "Red Flag": 0})  #con esto sumamos las flags y nos hacemos un dict
-    for tag in tags_ind:
-        parts = tag.split(": ")
-
-        if len(parts) != 2:
-            continue
-
-        name = parts[0].strip()
-        score = parts[1].strip()
-
+list_ut = [talks_ut_list, works_ut_list, ind_ut_list]
+#Vamos a contar cuantas de cada hay por founder
+scores_count_ut = defaultdict(lambda: {"Bonus Star": 0, "Red Flag": 0})
+for l in list_ut:
+    for tag in l:
+        nombre, score = tag.split(": ")
+        nombre = nombre.strip()
+        score = score.strip()
         if "Bonus" in score:
-            counts_works[name]["Bonus Star"] += 1
+            scores_count_ut[nombre]["Bonus Star"] += 1
         elif "Red" in score:
-            counts_works[name]["Red Flag"] += 1
-        
-    df_ind = pd.DataFrame.from_dict(counts_works, orient="index").reset_index()
-    df_ind = df_ind.rename(columns={"index": "Founder"})
+            scores_count_ut[nombre]["Red Flag"] += 1
 
-    if not df_ind.empty:
-        fig_ft = px.bar(
-            df_ind,
-            x="Founder",
-            y=["Bonus Star", "Red Flag"],
-            barmode="group",
-            title= titles[i],
-            color_discrete_map={"Bonus Star": "green", "Red Flag": "red"},
-            height=350,
-        )
-        st.plotly_chart(fig_ft, use_container_width=True, key=f"fig_{titles[i]}")
-    else:
-        st.info(f"No feedback for {titles[i]} in individual contest.")
-    i += 1
+if scores_count_ut:
+    st.subheader("🧠 Unconventional Thinking")
+    for nombre in sorted(scores_count_ut):
+        st.markdown(f"**{nombre}**")
+        col_bonus, col_red = st.columns(2)
+        col_bonus.metric("⭐ Bonus Star", int(scores_count_ut[nombre]["Bonus Star"]))
+        col_red.metric("🚩 Red Flag",    int(scores_count_ut[nombre]["Red Flag"]))
+
+# --------Ambition y Confidence (de Individual Contest)----------------------------
+
+startup_conf = normalize_list(row.get("Individual Contest | Confidence (Founder & Score)", []))
+ind_conf_list = [p.strip() for entry in startup_conf for p in entry.split(", ")]
+
+startup_amb = normalize_list(row.get("Individual Contest | Ambition (Founder & Score)", []))
+ind_amb_list = [p.strip() for entry in startup_amb for p in entry.split(", ")]
+
+scores_count_conf = defaultdict(lambda: {"Bonus Star": 0, "Red Flag": 0})
+scores_count_amb = defaultdict(lambda: {"Bonus Star": 0, "Red Flag": 0})
+
+for tag in ind_conf_list:
+    if ": " in tag:
+        nombre, score = tag.split(": ")
+        nombre = nombre.strip()
+        score = score.strip()
+        if "Bonus" in score:
+            scores_count_conf[nombre]["Bonus Star"] += 1
+        elif "Red" in score:
+            scores_count_conf[nombre]["Red Flag"] += 1
+
+for tag in ind_amb_list:
+    if ": " in tag:
+        nombre, score = tag.split(": ")
+        nombre = nombre.strip()
+        score = score.strip()
+        if "Bonus" in score:
+            scores_count_amb[nombre]["Bonus Star"] += 1
+        elif "Red" in score:
+            scores_count_amb[nombre]["Red Flag"] += 1
+
+for title, score_dict in zip(["Confidence", "Ambition"], [scores_count_conf, scores_count_amb]):
+    if score_dict:
+        st.subheader(title)
+        for nombre in sorted(score_dict):
+            st.markdown(f"**{nombre}**")
+            col_bonus, col_red = st.columns(2)
+            col_bonus.metric("⭐ Bonus Star", int(score_dict[nombre]["Bonus Star"]))
+            col_red.metric("🚩 Red Flag", int(score_dict[nombre]["Red Flag"]))
 
 # ====Individual Human Metrics========================================================
+
+individual_columns = [
+    "Purpose | Average",
+    "Openness | Average",
+    "Integrity and honesty | Average",
+    "Relevant experience | Average",
+    "Visionary leadership | Average",
+    "Flexibility | Average",
+    "Emotional intelligence | Average"
+]
+
+cohort_ind_means = df[individual_columns].mean()
+
+avg_cols_ind = st.columns(len(individual_columns))
+for i, col in enumerate(individual_columns):
+    pillar = col.split(" |")[0]
+    avg_cols_ind[i].metric(pillar, f"{cohort_ind_means[col]:.2f}")
 
 table_purp = normalize_list(row.get("Purpose | Founder & Score", []))
 tags_purp = [p.strip() for entry in table_purp for p in entry.split(", ")]
@@ -665,19 +616,30 @@ for nombre, campos in rec_hum.items():
     df_hum[nombre] = pd.DataFrame(rows)
 
 i = 0
-for nombre, data in df_hum.items():
+for nombre in sorted(df_hum):
+    data = df_hum[nombre]
     if not data.empty:
+
             fig_ft = px.bar(
                 data,
                 x="Campo",
                 y="Media",
+                text="Media",
                 barmode="group",
                 title= f"{nombre}",
                 color_discrete_sequence=["rgb(52, 199, 89)"],
                 height=350,
             )
+
+            fig_ft.update_traces(texttemplate='%{text:.2f}', textposition='outside')
+            fig_ft.update_layout(
+                yaxis_range=[0, 4],
+                height=450,
+                xaxis_tickangle=-45,
+                margin=dict(t=50, b=0),
+            )
             st.plotly_chart(fig_ft, use_container_width=True, key=f"fig_{i}")
-            i +=1
+            i += 1
     else:
         st.info(f"No feedback for individual metrics.")
 
@@ -738,7 +700,7 @@ st.plotly_chart(fig_team, use_container_width=True)
 
 # =====Human Call Results Section========================================
 
-st.markdown("### 👥 Human Call Results")
+st.markdown("## 👥 Human Call Results")
 
 st.markdown("""
 This section reflects qualitative human due diligence conducted through evaluator calls.  
