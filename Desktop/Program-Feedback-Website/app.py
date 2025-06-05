@@ -33,7 +33,8 @@ id_to_name = {
     "26": "Gaddex",
     "27": "Sheldonn",
     "28": "Vixiees",
-    "29": "IKI Health Group sL"
+    "29": "IKI Health Group sL",
+    "30" : "ByteHide"
 }
 
 # === Manual mapping of Airtable record ID to founder names ===
@@ -789,8 +790,6 @@ st.success(olbi_summary)
 # ------------------------------------------------------------------
 # 📄  FULL-PAGE “Save as PDF” button – paste at bottom of app.py
 # ------------------------------------------------------------------
-import streamlit as st
-
 st.markdown(
     """
     <!--  html2canvas + jsPDF from CDNs  -->
