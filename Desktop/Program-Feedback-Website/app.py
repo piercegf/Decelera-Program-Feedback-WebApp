@@ -13,7 +13,6 @@ import streamlit.components.v1 as components
 id_to_name = {
     "2": "Heuristik",
     "3": "Metly",
-    "4": "ByteHide",
     "6": "Skor",
     "7": "Robopedics",
     "9": "Quix",
