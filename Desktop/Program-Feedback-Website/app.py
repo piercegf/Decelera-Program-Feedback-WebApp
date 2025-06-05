@@ -218,12 +218,21 @@ fig.update_xaxes(autorange = "reversed")
 fig.update_traces(textposition='top center', marker=dict(size=12, line=dict(width=1, color='DarkSlateGrey')))
 fig.update_layout(
     height=600,
-    xaxis=dict(range=[0, 4.2], dtick=1),
-    yaxis=dict(range=[0, 4.2], dtick=1),
+    xaxis=dict(range=[4, 1], dtick=1, constrain="domain"),
+    yaxis=dict(range=[1, 4], dtick=1),
     title="Risk vs. Reward Matrix",
     title_x=0.5,
-    showlegend=False  # Optional: turn off if too many startups
+    showlegend=False,  # Optional: turn off if too many startups
+    shapes=[
+        dict(type="line", x0=2.5, x1=2.5, y0=0, y1=4.2, line=dict(dash="dot", color="grey", width=1)),
+        dict(type="line", x0=0, x1=4.2, y0=2.5, y1=2.5, line=dict(dash="dot", color="grey", width=1))
+    ]
 )
+# Etiquetas de cuadrantes
+fig.add_annotation(x=1.25, y=3.8, text=":warning: Riesgo alto, recompensa alta", showarrow=False, font=dict(size=12))
+fig.add_annotation(x=3.5,  y=3.8, text=":white_check_mark: Riesgo bajo, recompensa alta", showarrow=False, font=dict(size=12))
+fig.add_annotation(x=1.25, y=1.4, text=":x: Riesgo alto, recompensa baja", showarrow=False, font=dict(size=12))
+fig.add_annotation(x=3.5,  y=1.4, text=":information_source: Riesgo bajo, recompensa baja", showarrow=False, font=dict(size=12))
 
 st.plotly_chart(fig, use_container_width=True)
 
