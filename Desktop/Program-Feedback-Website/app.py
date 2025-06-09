@@ -215,7 +215,12 @@ fig.update_xaxes(autorange = "reversed")
 
 
 # Improve style
-fig.update_traces(textposition='top center', marker=dict(size=12, line=dict(width=1, color='DarkSlateGrey')))
+fig.update_traces(
+    textposition='top center',
+    textfont_color='black',
+    marker=dict(size=12, line=dict(width=1, color='DarkSlateGrey'))
+)
+
 fig.update_layout(
     height=600,
     xaxis=dict(range=[4, 1], dtick=1, constrain="domain"),
@@ -392,41 +397,67 @@ def _clean_html(raw: str) -> str:
 #   • end-of-string
 #   • whitespace
 #   • a capital letter (for “State”, “Momentum”…), a colon, or a newline
+CATS = [
+    "State of development", "Momentum", "Management",
+    "Market", "Team", "Pain", "Scalability",
+]
+
+# === Expresión regular para categorías (con ":")
+_CAT_RE = re.compile(r"(" + "|".join(map(re.escape, CATS)) + r")\s*:", flags=re.I)
+
+# === Expresión regular para nombres de mentor
 _NAME_RE = re.compile(
     r"(" + "|".join(re.escape(n) for n in JUDGE_NAMES) + r")(?=$|\s|[A-Z])",
     flags=re.I
 )
 
-# --- 4. Category formatting helper (unchanged) -----------------------------
-CATS = [
-    "State of development", "Momentum", "Management",
-    "Market", "Team", "Pain", "Scalability",
-]
-_CAT_RE = re.compile(rf"\b({'|'.join(map(re.escape, CATS))})\s*:", flags=re.I)
+def extract_mentor_scores(row) -> dict[str, dict[str, float]]:
+    mentor_scores = defaultdict(dict)
 
-def _format_categories(text: str) -> str:
+    for cat in CATS:
+        field_name = f"{cat} | Mentor Scores"
+        raw = row.get(field_name)
+        if not raw:
+            continue
+        entries = normalize_list(raw)
+        for entry in entries:
+            parts = [p.strip() for p in entry.split(",")]
+            for p in parts:
+                if ": " in p:
+                    name, score = p.split(": ")
+                    try:
+                        mentor_scores[name.strip()][cat.lower()] = float(score.strip())
+                    except ValueError:
+                        continue
+    return mentor_scores
+
+# === Formatea texto con puntuaciones del mentor
+def _format_categories(text: str, scores: dict[str, float] | None = None) -> str:
     text = _clean_html(text)
-    parts = _CAT_RE.split(text)
+    matches = list(_CAT_RE.finditer(text))
+    if not matches:
+        return text.strip()
+
     out = []
 
-    if parts and parts[0].strip():
-        out.append(parts[0].strip())
+    if matches[0].start() > 0:
+        out.append(text[:matches[0].start()].strip())
 
-    for i in range(1, len(parts), 2):
-        label, body = parts[i], parts[i + 1]
-        out.append(f"**{label.strip()}:** {body.strip()}")
+    for idx, match in enumerate(matches):
+        label = match.group(1).strip()
+        key = label.lower()
+        start = match.end()
+        end = matches[idx + 1].start() if idx + 1 < len(matches) else len(text)
+        body = text[start:end].strip()
 
-    return "\n".join(out)
+        score = scores.get(key) if scores else None
+        score_text = f" ({score:.2f})" if score is not None and pd.notna(score) else ""
+        out.append(f"**{label}{score_text}:** {body}")
 
-# --- 5. MAIN function: split raw feedback by mentor ------------------------
-def _group_by_mentor(raw: str):
-    """
-    Yields (mentor, formatted_comment) pairs from a free-text field that may
-    contain several mentors one after another, even without whitespace.
+    return "\n\n".join(out)
 
-    Example raw input accepted:
-        "Sean CookState of development: ...Momentum: ...Jorge Gonzalez-IglesiasState of development: ..."
-    """
+# === Extrae (mentor, comentario sin procesar) desde string largo
+def _group_by_mentor(raw: str) -> list[tuple[str, str]]:
     text = _clean_html(raw)
     hits = list(_NAME_RE.finditer(text))
 
@@ -436,53 +467,71 @@ def _group_by_mentor(raw: str):
 
     for idx, hit in enumerate(hits):
         mentor = hit.group(1).strip()
-        start  = hit.end()
-        end    = hits[idx + 1].start() if idx + 1 < len(hits) else len(text)
+        start = hit.end()
+        end = hits[idx + 1].start() if idx + 1 < len(hits) else len(text)
         comment = text[start:end].lstrip(' :–').strip()
         if comment:
-            yield mentor, _format_categories(comment)
+            yield mentor, comment
 
+# === Junta todas las banderas (green/yellow/red) para cada mentor
+def collect_flag_records(row):
+    flag_fields = [
+        ("RISK | Green_exp",   "green"),
+        ("RISK | Yellow_exp",  "yellow"),
+        ("RISK | Red_exp",     "red"),
+        ("Reward | Green_exp", "green"),
+        ("Reward | Yellow_exp","yellow"),
+        ("Reward | Red_exp",   "red"),
+    ]
 
-def render_flag_section(title: str, field: str, color: str):
-    values = row.get(field)
-    if isinstance(values, float) and pd.isna(values):
-        values = []
-    elif values is None:
-        values = []
-    elif isinstance(values, str):
-        values = [values]
-    elif not isinstance(values, list):
-        values = [str(values)]
+    records = []
+    for field, color in flag_fields:
+        for raw in normalize_list(row.get(field, [])):
+            for mentor, raw_comment in _group_by_mentor(raw):
+                records.append((mentor, color, raw_comment))
+    return records
 
-    st.markdown(f"**<span style='color:{color}; font-weight:600'>{title}</span>**",
-                unsafe_allow_html=True)
+# === Pinta cada mentor y su lista de flags con puntuaciones
+def render_flags_by_mentor(row):
+    st.markdown("#### 🚩 EM's Feedback")
 
-    if not values:
-        st.markdown("_None_")
+    mentor_scores = extract_mentor_scores(row)
+    records = collect_flag_records(row)
+
+    if not records:
+        st.markdown("_No hay feedback para este startup._")
         return
 
-    box = {"green": st.success,
-           "orange": st.warning,
-           "red": st.error}.get(color, st.info)
+    # Agrupar por mentor y color
+    grouped = defaultdict(lambda: defaultdict(list))  # mentor → color → [raw_text]
 
-    for raw in values:
-        for mentor, fb in _group_by_mentor(raw):
-            if fb:
-                box(f"**{mentor}**\n\n{_format_categories(fb)}")
+    for mentor, color, raw_comment in records:
+        grouped[mentor][color].append(raw_comment)
 
+    color_to_emoji = {"green": "🟢", "yellow": "🟡", "red": "🔴"}
 
+    for mentor in sorted(grouped):
+        st.markdown(f"### 👤 **{mentor}**")
+        scores = extract_mentor_scores(row).get(mentor, {})
 
-# === Risk Flags
-st.markdown("#### ⚠️ Risk Flags")
-render_flag_section("Green", "RISK | Green_exp", "green")
-render_flag_section("Yellow", "RISK | Yellow_exp", "orange")
-render_flag_section("Red", "RISK | Red_exp", "red")
+        for color in ["red", "yellow", "green"]:
+            comments = grouped[mentor].get(color, [])
+            if not comments:
+                continue
 
-# === Reward Flags
-st.markdown("#### 🎯 Reward Flags")
-render_flag_section("Green", "Reward | Green_exp", "green")
-render_flag_section("Yellow", "Reward | Yellow_exp", "orange")
-render_flag_section("Red", "Reward | Red_exp", "red")
+            emoji = color_to_emoji.get(color, "⚪️")
+            st.markdown(f"{emoji} **{color.capitalize()} Flag**")
+
+            # Agrupar y mostrar todo como lista
+            all_formatted = []
+            for comment in comments:
+                formatted = _format_categories(comment, scores=scores)
+                all_formatted.append(formatted)
+
+            st.markdown("\n\n".join(all_formatted))
+            st.markdown("---")
+
+render_flags_by_mentor(row)
 
 st.markdown("## 👤 Individual Human Metrics")
 
@@ -561,6 +610,10 @@ for title, score_dict in zip(["Confidence", "Ambition"], [scores_count_conf, sco
             col_red.metric("🚩 Red Flag", int(score_dict[nombre]["Red Flag"]))
 
 # ====Individual Human Metrics========================================================
+
+st.markdown("""
+**The following are the averages for the program and below the breakdown for the selected startup**
+""")
 
 individual_columns = [
     "Purpose | Average",
@@ -798,54 +851,52 @@ st.success(olbi_summary)
 # ------------------------------------------------------------------
 # 📄  FULL-PAGE “Save as PDF” button – paste at bottom of app.py
 # ------------------------------------------------------------------
-st.markdown(
-    """
-    <!--  html2canvas + jsPDF from CDNs  -->
+st.markdown("""
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
-      #pdf-btn {
-        margin: 1.5rem 0 2.5rem;
-        padding: 0.6rem 1.2rem;
-        background:#0b6abf;
-        color:#fff; border:none; border-radius:4px;
-        font-size:1rem; cursor:pointer;
-      }
+        #savepdf {
+            background-color: #0b6abf;
+            color: white;
+            padding: 0.6rem 1.2rem;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 30px;
+        }
     </style>
 
-    <button id="pdf-btn">⬇️ Download this page as PDF</button>
+    <button id="savepdf">⬇️ Descargar esta página en PDF</button>
 
     <script>
-      const { jsPDF } = window.jspdf;
+    const { jsPDF } = window.jspdf;
 
-      document.getElementById('pdf-btn').addEventListener('click', () => {
-        //  Wait a tick so any expanding elements finish animating
-        setTimeout(() => {
-          html2canvas(document.body, { scale: 2, useCORS: true }).then(canvas => {
-            const imgData  = canvas.toDataURL('image/png');
-            const pdf      = new jsPDF('p', 'mm', 'a4');
-            const pdfW     = pdf.internal.pageSize.getWidth();
-            const pdfH     = pdf.internal.pageSize.getHeight();
-            const imgW     = pdfW;
-            const imgH     = canvas.height * imgW / canvas.width;
+    document.getElementById("savepdf").addEventListener("click", function () {
+        const body = document.body;
+        html2canvas(body, { scale: 2, useCORS: true }).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const imgHeight = canvas.height * pageWidth / canvas.width;
 
-            let heightLeft = imgH;
-            let position   = 0;
+            let heightLeft = imgHeight;
+            let position = 0;
+
+            pdf.addImage(imgData, 'PNG', 0, position, pageWidth, imgHeight);
+            heightLeft -= pageHeight;
 
             while (heightLeft > 0) {
-              pdf.addImage(imgData, 'PNG', 0, position, imgW, imgH);
-              heightLeft -= pdfH;
-              if (heightLeft > 0) {
-                position = heightLeft - imgH;
+                position -= pageHeight;
                 pdf.addPage();
-              }
+                pdf.addImage(imgData, 'PNG', 0, position, pageWidth, imgHeight);
+                heightLeft -= pageHeight;
             }
-            pdf.save('streamlit_page.pdf');
-          });
-        }, 100);
-      });
+
+            pdf.save("feedback-decelera.pdf");
+        });
+    });
     </script>
-    """,
-    unsafe_allow_html=True,
-)
+""", unsafe_allow_html=True)
