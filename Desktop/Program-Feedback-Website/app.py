@@ -136,7 +136,6 @@ st.title("Decelera 2025 Program Feedback Dashboard")
 
 st.markdown("""
 **This dashboard summarizes real-time feedback from Decelera Experience Makers, from the team, and multiple due dilligiences conducted.**  
-Each startup is assessed across two key dimensions:
 
 Use the dropdown below to explore each startup’s evaluation, or scroll down for program-wide insights.
             
