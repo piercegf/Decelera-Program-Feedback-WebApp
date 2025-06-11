@@ -339,7 +339,7 @@ fig_risk = px.bar(
     color_discrete_sequence=["rgb(29, 202, 237)"]
 )
 fig_risk.update_traces(texttemplate='%{text:.2f}', textposition='outside')
-fig_risk.update_layout(yaxis_range=[0, 4], height=400)
+fig_risk.update_layout(yaxis_range=[1, 4], height=450)
 
 st.plotly_chart(fig_risk, use_container_width=True)
 
@@ -363,7 +363,7 @@ fig_reward = px.bar(
     color_discrete_sequence=["rgb(29, 202, 237)"]
 )
 fig_reward.update_traces(texttemplate='%{text:.2f}', textposition='outside')
-fig_reward.update_layout(yaxis_range=[0, 4], height=400)
+fig_reward.update_layout(yaxis_range=[1, 4], height=450)
 
 st.plotly_chart(fig_reward, use_container_width=True)
 
@@ -373,7 +373,7 @@ JUDGE_NAMES = [
     "Alejandro Lopez", "Alex Barrera", "Álvaro Dexeus", "Anastasia Dedyukhina",
     "Andrea Klimowitz", "Anna  Fedulow", "Bastien  Pierre Jean Gambini",
     "Beth Susanne", "David Beratech", "Elise Mitchell", "Esteban Urrea",
-    "Fernando Cabello-Astolfi", "Gennaro Bifulco", "Ivan Alaiz", "Ivan Nabalon",
+    "Fernando Cabello", "Gennaro Bifulco", "Ivan Alaiz", "Ivan Nabalon",
     "Ivan Peña", "Jair Halevi", "Jason Eckenroth", "Javier Darriba",
     "Juan Pablo Tejela", "Laura Montells", "Manel Adell", "Oscar Macia",
     "Paul Ford", "Pedro Claveria", "Philippe Gelis", "Ranny Nachmais",
@@ -694,7 +694,7 @@ for nombre in sorted(df_hum):
 
             fig_ft.update_traces(texttemplate='%{text:.2f}', textposition='outside')
             fig_ft.update_layout(
-                yaxis_range=[0, 4],
+                yaxis_range=[1, 4],
                 height=450,
                 xaxis_tickangle=-45,
                 margin=dict(t=50, b=0),
